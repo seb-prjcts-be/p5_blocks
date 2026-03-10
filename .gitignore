@@ -9,3 +9,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# AI agent context (lokaal)
+AGENTS.md
