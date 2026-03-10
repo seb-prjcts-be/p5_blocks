@@ -390,8 +390,8 @@ const CATEGORIES = {
       { type: 'fill',         label: 'fill',         params: [{name:'r',def:'255'},{name:'g',def:'100'},{name:'b',def:'50'}],  code: p=>`fill(${p.r}, ${p.g}, ${p.b});` },
       { type: 'stroke',       label: 'stroke',       params: [{name:'r',def:'0'},{name:'g',def:'0'},{name:'b',def:'0'}],       code: p=>`stroke(${p.r}, ${p.g}, ${p.b});` },
       { type: 'strokeWeight', label: 'strokeWeight', params: [{name:'w',def:'2'}],                                             code: p=>`strokeWeight(${p.w});` },
-      { type: 'noFill',       label: 'noFill',       params: [],                                                               code: ()=>'noFill();' },
-      { type: 'noStroke',     label: 'noStroke',     params: [],                                                               code: ()=>'noStroke();' },
+      { type: 'noFill',       label: 'noFill()',     params: [],                                                               code: ()=>'noFill();' },
+      { type: 'noStroke',     label: 'noStroke()',   params: [],                                                               code: ()=>'noStroke();' },
       { type: 'colorMode',    label: 'colorMode',    params: [{name:'mode',def:'HSB'}],                                        code: p=>`colorMode(${p.mode});` },
     ]
   },
@@ -401,8 +401,8 @@ const CATEGORIES = {
       { type: 'translate', label: 'translate', params: [{name:'x',def:'100'},{name:'y',def:'100'}], code: p=>`translate(${p.x}, ${p.y});` },
       { type: 'rotate',    label: 'rotate',    params: [{name:'a',def:'PI/4'}],                     code: p=>`rotate(${p.a});` },
       { type: 'scale',     label: 'scale',     params: [{name:'s',def:'1.5'}],                      code: p=>`scale(${p.s});` },
-      { type: 'push',      label: 'push',      params: [],                                          code: ()=>'push();' },
-      { type: 'pop',       label: 'pop',       params: [],                                          code: ()=>'pop();' },
+      { type: 'push',      label: 'push()',    params: [],                                          code: ()=>'push();' },
+      { type: 'pop',       label: 'pop()',     params: [],                                          code: ()=>'pop();' },
     ]
   },
   interactie: {
