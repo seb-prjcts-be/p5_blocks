@@ -210,9 +210,22 @@
       background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.15);
       border-radius: 4px; color: #fff; padding: 1px 6px;
       font-family: var(--mono); font-size: 12px; outline: none;
-      min-width: 28px; transition: border-color .1s;
+      min-width: 28px; transition: border-color .1s, background .1s;
     }
     .block-input:focus { border-color: rgba(255,255,255,.4); }
+    /* Highlight when an expression block hovers over this input */
+    .block-input.expr-over {
+      border-color: #fff !important;
+      background: rgba(255,255,255,.28) !important;
+      cursor: copy;
+    }
+
+    /* Expression (reporter) blocks — pill shape, like Scratch */
+    .pal-block.expr {
+      border-radius: 20px;
+      padding-left: 14px; padding-right: 14px;
+    }
+    .pal-block.expr::before { display: none; }
 
     .block-del {
       margin-left: auto; background: rgba(0,0,0,.25); border: none;
@@ -554,10 +567,12 @@ function renderBlockList() {
     }
     div.innerHTML = inner;
 
+    if (block.isExpr) div.classList.add('expr');
+
     div.addEventListener('dragstart', e => {
       const vals = {};
       block.params.forEach(p => vals[p.name] = p.def);
-      state.dragItem = { type: block.type, color: cat.color, values: vals, source: 'palette' };
+      state.dragItem = { type: block.type, color: cat.color, values: vals, source: 'palette', isExpr: !!block.isExpr };
       e.dataTransfer.effectAllowed = 'copy';
     });
     div.addEventListener('dragend', () => {
@@ -620,6 +635,29 @@ function renderZone(zone) {
         });
         inp.addEventListener('click', e => e.stopPropagation());
         inp.addEventListener('mousedown', e => e.stopPropagation());
+
+        // Drop expression blocks into this parameter slot
+        inp.addEventListener('dragover', e => {
+          if (!state.dragItem?.isExpr) return;
+          e.preventDefault(); e.stopPropagation();
+          inp.classList.add('expr-over');
+        });
+        inp.addEventListener('dragleave', () => inp.classList.remove('expr-over'));
+        inp.addEventListener('drop', e => {
+          if (!state.dragItem?.isExpr) return;
+          e.preventDefault(); e.stopPropagation();
+          const exprDef = findDef(state.dragItem.type);
+          const code = exprDef.code(state.dragItem.values);
+          block.values[p.name] = code;
+          inp.value = code;
+          inp.style.width = inputWidth(code);
+          inp.classList.remove('expr-over');
+          state.dragItem = null;
+          state.dropTarget = null;
+          scheduleRun();
+          updateCodePanel();
+        });
+
         div.appendChild(inp);
       });
       const closing = def.isCtrl ? ') {' : (def.isExpr ? ')' : ');');
@@ -655,6 +693,7 @@ function renderZone(zone) {
       renderZones();
     });
     div.addEventListener('dragover', e => {
+      if (state.dragItem?.isExpr) return;
       e.preventDefault(); e.stopPropagation();
       if (state.dropTarget?.zone !== zone || state.dropTarget?.idx !== idx) {
         state.dropTarget = { zone, idx };
@@ -673,6 +712,7 @@ function renderZone(zone) {
   body.classList.toggle('drag-over', state.dropTarget?.zone === zone);
 
   body.addEventListener('dragover', e => {
+    if (state.dragItem?.isExpr) return;
     e.preventDefault();
     if (!state.dropTarget || state.dropTarget.zone !== zone) {
       state.dropTarget = { zone, idx: blocks.length };
