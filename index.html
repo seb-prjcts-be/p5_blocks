@@ -352,7 +352,7 @@
 
 const CATEGORIES = {
   setup: {
-    label: 'Setup', color: '#E8A838',
+    label: 'Setup', color: '#FBBF2E',
     blocks: [
       { type: 'createCanvas',  label: 'createCanvas',  params: [{name:'w',def:'400'},{name:'h',def:'400'}],           code: p=>`createCanvas(${p.w}, ${p.h});` },
       { type: 'background',    label: 'background',    params: [{name:'c',def:'220'}],                                code: p=>`background(${p.c});` },
@@ -360,7 +360,7 @@ const CATEGORIES = {
     ]
   },
   shapes: {
-    label: 'Vormen', color: '#4C97FF',
+    label: 'Vormen', color: '#0091D1',
     blocks: [
       { type: 'ellipse',  label: 'ellipse',  params: [{name:'x',def:'200'},{name:'y',def:'200'},{name:'w',def:'80'},{name:'h',def:'80'}],    code: p=>`ellipse(${p.x}, ${p.y}, ${p.w}, ${p.h});` },
       { type: 'circle',   label: 'circle',   params: [{name:'x',def:'200'},{name:'y',def:'200'},{name:'d',def:'100'}],                       code: p=>`circle(${p.x}, ${p.y}, ${p.d});` },
@@ -372,7 +372,7 @@ const CATEGORIES = {
     ]
   },
   kleur: {
-    label: 'Kleur', color: '#9966FF',
+    label: 'Kleur', color: '#E23D96',
     blocks: [
       { type: 'fill',         label: 'fill',         params: [{name:'r',def:'255'},{name:'g',def:'100'},{name:'b',def:'50'}],  code: p=>`fill(${p.r}, ${p.g}, ${p.b});` },
       { type: 'stroke',       label: 'stroke',       params: [{name:'r',def:'0'},{name:'g',def:'0'},{name:'b',def:'0'}],       code: p=>`stroke(${p.r}, ${p.g}, ${p.b});` },
@@ -383,7 +383,7 @@ const CATEGORIES = {
     ]
   },
   transform: {
-    label: 'Transform', color: '#CF63CF',
+    label: 'Transform', color: '#69619B',
     blocks: [
       { type: 'translate', label: 'translate', params: [{name:'x',def:'100'},{name:'y',def:'100'}], code: p=>`translate(${p.x}, ${p.y});` },
       { type: 'rotate',    label: 'rotate',    params: [{name:'a',def:'PI/4'}],                     code: p=>`rotate(${p.a});` },
@@ -393,7 +393,7 @@ const CATEGORIES = {
     ]
   },
   interactie: {
-    label: 'Interactie', color: '#FF6680',
+    label: 'Interactie', color: '#EF4424',
     blocks: [
       { type: 'text',     label: 'text',     params: [{name:'txt',def:"'Hallo!'"},{name:'x',def:'50'},{name:'y',def:'50'}], code: p=>`text(${p.txt}, ${p.x}, ${p.y});` },
       { type: 'textSize', label: 'textSize', params: [{name:'s',def:'32'}],                                                 code: p=>`textSize(${p.s});` },
@@ -402,7 +402,7 @@ const CATEGORIES = {
     ]
   },
   wiskunde: {
-    label: 'Wiskunde', color: '#59C059',
+    label: 'Wiskunde', color: '#61B199',
     blocks: [
       { type: 'random', label: 'random', params: [{name:'min',def:'0'},{name:'max',def:'400'}],                                                             isExpr: true, code: p=>`random(${p.min}, ${p.max})` },
       { type: 'map',    label: 'map',    params: [{name:'v',def:'mouseX'},{name:'a',def:'0'},{name:'b',def:'400'},{name:'c',def:'0'},{name:'d',def:'255'}], isExpr: true, code: p=>`map(${p.v},${p.a},${p.b},${p.c},${p.d})` },
@@ -412,7 +412,7 @@ const CATEGORIES = {
     ]
   },
   controle: {
-    label: 'Controle', color: '#FFAB19',
+    label: 'Controle', color: '#F3722E',
     blocks: [
       { type: 'for_loop', label: 'for',  isCtrl: true, params: [{name:'v',def:'i'},{name:'start',def:'0'},{name:'end',def:'10'},{name:'step',def:'1'}], code: p=>`for (let ${p.v} = ${p.start}; ${p.v} < ${p.end}; ${p.v} += ${p.step}) {` },
       { type: 'if_block', label: 'if',   isCtrl: true, params: [{name:'cond',def:'mouseIsPressed'}],                                                   code: p=>`if (${p.cond}) {` },
