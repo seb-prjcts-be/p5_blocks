@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="nl" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>p5* Scratch</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <!-- CodeMirror -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/codemirror.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/theme/eclipse.min.css" rel="stylesheet" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --p5-pink:   #ED225D;
+      --p5-pink-h: #c41a4f;
+      --bg-app:    #f2f2f2;
+      --bg-panel:  #ffffff;
+      --bg-editor: #ffffff;
+      --bg-console:#f8f8f8;
+      --border:    rgba(0,0,0,.1);
+      --text-muted: #666;
+      --preview-bg: #f0f0f0;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg-app);
+      color: #222;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    /* ── Navbar ─────────────────────────────────────── */
+    #navbar {
+      height: 44px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .p5-logo {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--p5-pink);
+      font-style: italic;
+      letter-spacing: -1px;
+      line-height: 1;
+      text-decoration: none;
+      padding: 2px 4px;
+    }
+    .p5-logo span { color: #222; }
+
+    #sketch-name {
+      background: transparent;
+      border: 1px solid transparent;
+      color: #333;
+      font-size: 13px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      outline: none;
+      max-width: 160px;
+      transition: border-color .15s;
+    }
+    #sketch-name:focus { border-color: var(--border); background: rgba(0,0,0,.04); }
+
+    .btn-run {
+      background: var(--p5-pink);
+      border: none;
+      color: #fff;
+      border-radius: 6px;
+      padding: 5px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+      transition: background .15s;
+    }
+    .btn-run:hover { background: var(--p5-pink-h); }
+
+    .btn-stop {
+      background: rgba(0,0,0,.05);
+      border: 1px solid var(--border);
+      color: #666;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+      transition: all .15s;
+    }
+    .btn-stop:hover { background: rgba(0,0,0,.1); color: #333; }
+    .btn-stop.active { background: #ddd; color: #333; border-color: #bbb; }
+
+    .nav-divider { width: 1px; height: 22px; background: var(--border); margin: 0 4px; }
+    .nav-spacer  { flex: 1; }
+
+    .btn-icon {
+      background: transparent;
+      border: none;
+      color: #888;
+      font-size: 15px;
+      padding: 5px 7px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all .15s;
+      display: flex; align-items: center;
+    }
+    .btn-icon:hover { background: rgba(0,0,0,.06); color: #222; }
+    .btn-icon.active { color: var(--p5-pink); }
+
+    .badge-autorun {
+      font-size: 10px;
+      background: rgba(237,34,93,.2);
+      color: var(--p5-pink);
+      border: 1px solid rgba(237,34,93,.3);
+      border-radius: 10px;
+      padding: 1px 7px;
+      font-weight: 600;
+      cursor: default;
+    }
+
+    /* ── Layout ─────────────────────────────────────── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    #main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* ── Editor pane ────────────────────────────────── */
+    #editor-pane {
+      display: flex;
+      flex-direction: column;
+      width: 50%;
+      min-width: 200px;
+      border-right: 1px solid var(--border);
+      background: var(--bg-editor);
+    }
+
+    .pane-tabs {
+      display: flex;
+      align-items: stretch;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      padding: 0 10px;
+      gap: 0;
+      flex-shrink: 0;
+    }
+    .pane-tab {
+      font-size: 12px;
+      padding: 7px 14px;
+      color: #888;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      user-select: none;
+      transition: color .15s;
+      white-space: nowrap;
+    }
+    .pane-tab.active { color: #222; border-bottom-color: var(--p5-pink); }
+    .pane-tab:hover:not(.active) { color: #444; }
+
+    #cm-container { flex: 1; overflow: hidden; min-height: 0; }
+
+    .CodeMirror {
+      height: 100% !important;
+      font-family: 'Source Code Pro', 'Fira Code', monospace !important;
+      font-size: 13.5px !important;
+      line-height: 1.65 !important;
+      background: var(--bg-editor) !important;
+      color: #333 !important;
+    }
+    .CodeMirror-scroll { height: 100% !important; }
+    .CodeMirror-gutters { background: #f5f5f5 !important; border-right: 1px solid #e0e0e0 !important; }
+    .CodeMirror-linenumber { color: #aaa !important; }
+
+    /* ── Console ────────────────────────────────────── */
+    #console-pane {
+      height: 130px;
+      min-height: 60px;
+      max-height: 50%;
+      background: var(--bg-console);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    #console-header {
+      display: flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+    }
+    #console-header span { font-size: 11px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: .7px; flex: 1; }
+    #console-clear { background: transparent; border: none; color: #999; font-size: 11px; cursor: pointer; padding: 2px 6px; border-radius: 3px; }
+    #console-clear:hover { color: #555; background: rgba(0,0,0,.06); }
+    #console-output {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 10px;
+      font-family: 'Source Code Pro', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .log-line  { color: #333; }
+    .log-warn  { color: #b8860b; }
+    .log-error { color: #c0392b; }
+    .log-info  { color: #2980b9; font-style: italic; }
+
+    /* ── Resize handle ──────────────────────────────── */
+    #resize-handle {
+      width: 5px;
+      background: transparent;
+      cursor: col-resize;
+      flex-shrink: 0;
+      transition: background .15s;
+      position: relative;
+    }
+    #resize-handle:hover, #resize-handle.dragging { background: var(--p5-pink); }
+
+    /* ── Preview pane ───────────────────────────────── */
+    #preview-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 200px;
+      background: var(--bg-panel);
+    }
+
+    #preview-header {
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      height: 36px;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    #preview-header span { font-size: 11px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: .7px; flex: 1; }
+
+    #preview-frame {
+      flex: 1;
+      width: 100%;
+      border: none;
+      background: var(--preview-bg);
+    }
+
+    /* ── Resize console handle ──────────────────────── */
+    #console-resize {
+      height: 5px;
+      background: transparent;
+      cursor: row-resize;
+      flex-shrink: 0;
+      transition: background .15s;
+    }
+    #console-resize:hover, #console-resize.dragging { background: var(--p5-pink); }
+
+    /* ── Scrollbar ──────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(0,0,0,.15); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.28); }
+
+    /* ── Tooltip ────────────────────────────────────── */
+    [title] { cursor: default; }
+
+    /* ── Shortcut hint ──────────────────────────────── */
+    .kbd {
+      display: inline-block;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 10px;
+      padding: 1px 5px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── Navbar ────────────────────────────────────────── -->
+  <div id="navbar">
+    <a class="p5-logo" href="#" title="p5.js Scratch">p5<span>*</span></a>
+
+    <div class="nav-divider"></div>
+
+    <input id="sketch-name" type="text" value="mijn_sketch" spellcheck="false" title="Schets naam" />
+
+    <div class="nav-divider"></div>
+
+    <button class="btn-run" id="btn-run" title="Uitvoeren (Ctrl+Enter)">
+      <i class="bi bi-play-fill"></i> Run
+    </button>
+    <button class="btn-stop" id="btn-stop" title="Stoppen">
+      <i class="bi bi-stop-fill"></i> Stop
+    </button>
+
+    <div class="nav-divider"></div>
+
+    <span id="autorun-badge" class="badge-autorun" title="Automatisch uitvoeren bij wijziging">
+      auto
+    </span>
+
+    <div class="nav-spacer"></div>
+
+    <button class="btn-icon" id="btn-font-dec" title="Kleiner lettertype">
+      <i class="bi bi-zoom-out"></i>
+    </button>
+    <button class="btn-icon" id="btn-font-inc" title="Groter lettertype">
+      <i class="bi bi-zoom-in"></i>
+    </button>
+
+    <div class="nav-divider"></div>
+
+    <button class="btn-icon" id="btn-copy" title="Code kopiëren">
+      <i class="bi bi-clipboard"></i>
+    </button>
+    <button class="btn-icon" id="btn-download" title="Downloaden als HTML">
+      <i class="bi bi-download"></i>
+    </button>
+
+    <div class="nav-divider"></div>
+
+    <select id="preset-select" class="form-select form-select-sm border-secondary text-secondary"
+      style="width:auto;font-size:12px;padding:3px 28px 3px 8px;cursor:pointer;" title="Voorbeeld laden">
+      <option value="">Voorbeelden…</option>
+      <option value="lege_schets">Lege schets</option>
+      <option value="muis_cirkel">Muis volger</option>
+      <option value="regenboog_lus">Regenboog lus</option>
+      <option value="ballen">Stuiterende ballen</option>
+      <option value="perlin_golven">Perlin golven</option>
+      <option value="klok">Analoge klok</option>
+    </select>
+  </div>
+
+  <!-- ── Main ──────────────────────────────────────────── -->
+  <div id="main">
+
+    <!-- Editor pane -->
+    <div id="editor-pane">
+      <div class="pane-tabs">
+        <div class="pane-tab active">sketch.js</div>
+      </div>
+      <div id="cm-container">
+        <textarea id="code-editor"></textarea>
+      </div>
+      <div id="console-resize"></div>
+      <div id="console-pane">
+        <div id="console-header">
+          <span><i class="bi bi-terminal me-1"></i> Console</span>
+          <button id="console-clear" title="Console leegmaken"><i class="bi bi-trash3"></i> wissen</button>
+        </div>
+        <div id="console-output">
+          <div class="log-info">Klaar. Druk op Run of gebruik Ctrl+Enter.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resize handle -->
+    <div id="resize-handle"></div>
+
+    <!-- Preview pane -->
+    <div id="preview-pane">
+      <div id="preview-header">
+        <i class="bi bi-display" style="color:#666;font-size:13px;"></i>
+        <span>Preview</span>
+        <button class="btn-icon" id="btn-fullscreen" title="Volledig scherm preview">
+          <i class="bi bi-arrows-fullscreen"></i>
+        </button>
+        <button class="btn-icon" id="btn-reload-frame" title="Preview herladen">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+      <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin" title="p5.js Preview"></iframe>
+    </div>
+
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- CodeMirror -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/addon/comment/comment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/addon/selection/active-line.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/addon/hint/show-hint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/addon/hint/javascript-hint.min.js"></script>
+
+<script>
+// ── Presets ──────────────────────────────────────────────────────────
+const PRESETS = {
+  lege_schets: `function setup() {
+  createCanvas(400, 400);
+}
+
+function draw() {
+  background(220);
+}`,
+
+  muis_cirkel: `function setup() {
+  createCanvas(400, 400);
+  background(30);
+}
+
+function draw() {
+  // Slepende staart
+  fill(30, 30, 30, 25);
+  noStroke();
+  rect(0, 0, width, height);
+
+  // Cirkel volgt muis
+  fill(100, 200, 255);
+  noStroke();
+  circle(mouseX, mouseY, 50);
+
+  // Kleine glans
+  fill(255, 255, 255, 120);
+  circle(mouseX - 8, mouseY - 8, 14);
+}`,
+
+  regenboog_lus: `function setup() {
+  createCanvas(400, 400);
+  colorMode(HSB, 360, 100, 100);
+  noStroke();
+}
+
+function draw() {
+  background(0, 0, 10, 30);
+
+  for (let i = 0; i < 12; i++) {
+    let hoek = i * TWO_PI / 12 + frameCount * 0.02;
+    let x = width / 2 + cos(hoek) * 140;
+    let y = height / 2 + sin(hoek) * 140;
+    fill((i * 30 + frameCount) % 360, 90, 100);
+    circle(x, y, 35);
+  }
+}`,
+
+  ballen: `let ballen = [];
+
+function setup() {
+  createCanvas(400, 400);
+  for (let i = 0; i < 8; i++) {
+    ballen.push({
+      x: random(width),
+      y: random(height),
+      vx: random(-4, 4),
+      vy: random(-4, 4),
+      r: random(15, 35),
+      kleur: [random(100,255), random(100,255), random(100,255)]
+    });
+  }
+}
+
+function draw() {
+  background(20);
+
+  for (let b of ballen) {
+    b.x += b.vx;
+    b.y += b.vy;
+
+    if (b.x - b.r < 0 || b.x + b.r > width)  b.vx *= -1;
+    if (b.y - b.r < 0 || b.y + b.r > height) b.vy *= -1;
+
+    fill(b.kleur[0], b.kleur[1], b.kleur[2]);
+    noStroke();
+    circle(b.x, b.y, b.r * 2);
+
+    // Glans
+    fill(255, 255, 255, 60);
+    circle(b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.5);
+  }
+}`,
+
+  perlin_golven: `let t = 0;
+
+function setup() {
+  createCanvas(400, 400);
+  colorMode(HSB, 360, 100, 100);
+}
+
+function draw() {
+  background(220, 30, 10);
+
+  for (let golft = 0; golft < 4; golft++) {
+    stroke((golft * 60 + t * 30) % 360, 80, 100, 0.7);
+    strokeWeight(2);
+    noFill();
+
+    beginShape();
+    for (let x = 0; x <= width; x += 4) {
+      let n = noise(x * 0.006, t + golft * 0.5);
+      let y = map(n, 0, 1, height * 0.1, height * 0.9);
+      vertex(x, y);
+    }
+    endShape();
+  }
+  t += 0.008;
+}`,
+
+  klok: `function setup() {
+  createCanvas(400, 400);
+  angleMode(DEGREES);
+  textAlign(CENTER, CENTER);
+}
+
+function draw() {
+  background(25);
+
+  // Wijzerplaat
+  translate(width / 2, height / 2);
+  fill(40); stroke(100); strokeWeight(2);
+  circle(0, 0, 340);
+
+  // Uurmarkeringen
+  for (let i = 0; i < 12; i++) {
+    let hoek = i * 30 - 90;
+    let x1 = cos(hoek) * 155, y1 = sin(hoek) * 155;
+    let x2 = cos(hoek) * 165, y2 = sin(hoek) * 165;
+    stroke(180); strokeWeight(i % 3 === 0 ? 3 : 1);
+    line(x1, y1, x2, y2);
+  }
+
+  // Huidige tijd
+  let h = hour() % 12, m = minute(), s = second();
+  let hHoek = h * 30 + m * 0.5 - 90;
+  let mHoek = m * 6 - 90;
+  let sHoek = s * 6 - 90;
+
+  // Uurwijzer
+  stroke(240); strokeWeight(5); strokeCap(ROUND);
+  line(0, 0, cos(hHoek) * 90, sin(hHoek) * 90);
+
+  // Minuutwijzer
+  stroke(220); strokeWeight(3);
+  line(0, 0, cos(mHoek) * 130, sin(mHoek) * 130);
+
+  // Secondewijzer
+  stroke(237, 34, 93); strokeWeight(1.5);
+  line(0, 0, cos(sHoek) * 145, sin(sHoek) * 145);
+
+  // Middelpunt
+  fill(237, 34, 93); noStroke();
+  circle(0, 0, 10);
+}`
+};
+
+const DEFAULT_CODE = PRESETS.muis_cirkel;
+
+// ── CodeMirror setup ──────────────────────────────────────────────────
+const editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+  mode: 'javascript',
+  theme: 'eclipse',
+  lineNumbers: true,
+  autoCloseBrackets: true,
+  matchBrackets: true,
+  styleActiveLine: true,
+  indentUnit: 2,
+  tabSize: 2,
+  indentWithTabs: false,
+  extraKeys: {
+    'Ctrl-Enter': runSketch,
+    'Ctrl-/':    'toggleComment',
+    'Tab': (cm) => {
+      if (cm.somethingSelected()) cm.indentSelection('add');
+      else cm.replaceSelection('  ', 'end');
+    }
+  }
+});
+
+editor.setValue(DEFAULT_CODE);
+
+// ── Auto-run debounce ─────────────────────────────────────────────────
+let autoRunTimer = null;
+let autoRun = true;
+
+editor.on('change', () => {
+  if (!autoRun) return;
+  clearTimeout(autoRunTimer);
+  autoRunTimer = setTimeout(runSketch, 900);
+});
+
+// ── Run sketch ────────────────────────────────────────────────────────
+let isRunning = false;
+const frame = document.getElementById('preview-frame');
+
+function buildHtml(code) {
+  // Intercept console methods via postMessage
+  const consoleProxy = `
+    (function() {
+      const _log = console.log, _warn = console.warn, _error = console.error;
+      const send = (type, args) => parent.postMessage({ _p5console: true, type, msg: args.map(a => {
+        try { return typeof a === 'object' ? JSON.stringify(a) : String(a); } catch(e) { return String(a); }
+      }).join(' ') }, '*');
+      console.log   = (...a) => { send('log',   a); _log(...a);   };
+      console.warn  = (...a) => { send('warn',  a); _warn(...a);  };
+      console.error = (...a) => { send('error', a); _error(...a); };
+      window.onerror = (msg, src, line, col) => {
+        send('error', [\`Fout (regel \${line}): \${msg}\`]);
+        return false;
+      };
+    })();
+  `;
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<style>
+  html,body { margin:0; padding:0; overflow:hidden; background:#f0f0f0; }
+  canvas { display:block; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"><\/script>
+<script>${consoleProxy}<\/script>
+</head>
+<body>
+<script>
+${code}
+<\/script>
+</body>
+</html>`;
+}
+
+function runSketch() {
+  const code = editor.getValue();
+  clearConsole();
+  logConsole('info', 'Sketch gestart…');
+  frame.srcdoc = buildHtml(code);
+  isRunning = true;
+  updateRunState();
+}
+
+function stopSketch() {
+  frame.srcdoc = '';
+  isRunning = false;
+  logConsole('info', 'Sketch gestopt.');
+  updateRunState();
+}
+
+function updateRunState() {
+  document.getElementById('btn-stop').classList.toggle('active', isRunning);
+}
+
+// ── Console ───────────────────────────────────────────────────────────
+const consoleOutput = document.getElementById('console-output');
+
+function logConsole(type, msg) {
+  const div = document.createElement('div');
+  div.className = `log-${type}`;
+  div.textContent = (type === 'error' ? '✖ ' : type === 'warn' ? '⚠ ' : '') + msg;
+  consoleOutput.appendChild(div);
+  consoleOutput.scrollTop = consoleOutput.scrollHeight;
+}
+
+function clearConsole() {
+  consoleOutput.innerHTML = '';
+}
+
+window.addEventListener('message', (e) => {
+  if (e.data && e.data._p5console) {
+    logConsole(e.data.type, e.data.msg);
+  }
+});
+
+document.getElementById('console-clear').addEventListener('click', clearConsole);
+
+// ── Buttons ───────────────────────────────────────────────────────────
+document.getElementById('btn-run').addEventListener('click', runSketch);
+document.getElementById('btn-stop').addEventListener('click', stopSketch);
+document.getElementById('btn-reload-frame').addEventListener('click', runSketch);
+
+document.getElementById('btn-copy').addEventListener('click', () => {
+  navigator.clipboard?.writeText(editor.getValue()).then(() => {
+    logConsole('info', 'Code gekopieerd naar klembord.');
+  });
+});
+
+document.getElementById('btn-download').addEventListener('click', () => {
+  const html = buildHtml(editor.getValue());
+  const name = (document.getElementById('sketch-name').value.trim() || 'sketch') + '.html';
+  const blob = new Blob([html], { type: 'text/html' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
+  a.click(); URL.revokeObjectURL(a.href);
+  logConsole('info', `Gedownload als ${name}`);
+});
+
+document.getElementById('btn-fullscreen').addEventListener('click', () => {
+  if (frame.requestFullscreen) frame.requestFullscreen();
+});
+
+// Font size
+let fontSize = 13.5;
+document.getElementById('btn-font-inc').addEventListener('click', () => {
+  fontSize = Math.min(22, fontSize + 1);
+  document.querySelector('.CodeMirror').style.fontSize = fontSize + 'px';
+  editor.refresh();
+});
+document.getElementById('btn-font-dec').addEventListener('click', () => {
+  fontSize = Math.max(9, fontSize - 1);
+  document.querySelector('.CodeMirror').style.fontSize = fontSize + 'px';
+  editor.refresh();
+});
+
+// Auto-run toggle
+const badge = document.getElementById('autorun-badge');
+badge.style.cursor = 'pointer';
+badge.addEventListener('click', () => {
+  autoRun = !autoRun;
+  badge.style.opacity = autoRun ? '1' : '0.35';
+  badge.title = autoRun ? 'Automatisch uitvoeren: AAN' : 'Automatisch uitvoeren: UIT';
+  logConsole('info', `Auto-run: ${autoRun ? 'aan' : 'uit'}`);
+});
+
+// Presets
+document.getElementById('preset-select').addEventListener('change', function () {
+  const key = this.value;
+  if (!key) return;
+  if (PRESETS[key]) {
+    editor.setValue(PRESETS[key]);
+    document.getElementById('sketch-name').value = key;
+    runSketch();
+  }
+  this.value = '';
+});
+
+// ── Horizontal resize ─────────────────────────────────────────────────
+const handle = document.getElementById('resize-handle');
+const editorPane = document.getElementById('editor-pane');
+let resizing = false, startX = 0, startW = 0;
+
+handle.addEventListener('mousedown', (e) => {
+  resizing = true;
+  startX = e.clientX;
+  startW = editorPane.offsetWidth;
+  handle.classList.add('dragging');
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!resizing) return;
+  const newW = Math.max(200, Math.min(startW + e.clientX - startX, window.innerWidth - 200));
+  editorPane.style.width = newW + 'px';
+});
+
+document.addEventListener('mouseup', () => {
+  if (!resizing) return;
+  resizing = false;
+  handle.classList.remove('dragging');
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+  editor.refresh();
+});
+
+// ── Console vertical resize ───────────────────────────────────────────
+const consoleResize = document.getElementById('console-resize');
+const consolePane   = document.getElementById('console-pane');
+let cResizing = false, cStartY = 0, cStartH = 0;
+
+consoleResize.addEventListener('mousedown', (e) => {
+  cResizing = true;
+  cStartY = e.clientY;
+  cStartH = consolePane.offsetHeight;
+  consoleResize.classList.add('dragging');
+  document.body.style.cursor = 'row-resize';
+  document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!cResizing) return;
+  const delta = cStartY - e.clientY;
+  const newH = Math.max(40, Math.min(cStartH + delta, 400));
+  consolePane.style.height = newH + 'px';
+});
+
+document.addEventListener('mouseup', () => {
+  if (!cResizing) return;
+  cResizing = false;
+  consoleResize.classList.remove('dragging');
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+});
+
+// ── Init ──────────────────────────────────────────────────────────────
+runSketch();
+</script>
+</body>
+</html>
