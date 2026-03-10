@@ -1,813 +1,800 @@
 <!DOCTYPE html>
-<html lang="nl" data-bs-theme="light">
+<html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>p5* Scratch</title>
-
-  <!-- Bootstrap 5 -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <!-- Bootstrap Icons -->
+  <title>p5* Blocks</title>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
-  <!-- CodeMirror -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/codemirror.min.css" rel="stylesheet" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/theme/eclipse.min.css" rel="stylesheet" />
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet" />
-
   <style>
+    /* ── Reset & base ────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --p5-pink:   #ED225D;
-      --p5-pink-h: #c41a4f;
-      --bg-app:    #f2f2f2;
-      --bg-panel:  #ffffff;
-      --bg-editor: #ffffff;
-      --bg-console:#f8f8f8;
-      --border:    rgba(0,0,0,.1);
-      --text-muted: #666;
-      --preview-bg: #f0f0f0;
+      --p5-pink:    #ED225D;
+      --p5-pink-dk: #c41a4f;
+      --bg:         #1b1b1b;
+      --bg-panel:   #252525;
+      --bg-palette: #2a2a2a;
+      --bg-zone:    #1e1e1e;
+      --border:     rgba(255,255,255,.08);
+      --text:       #e0e0e0;
+      --text-dim:   #777;
+      --mono:       'Source Code Pro', 'Fira Code', monospace;
+      --ui:         'Nunito', 'Segoe UI', sans-serif;
     }
 
-    * { box-sizing: border-box; }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--ui); overflow: hidden; }
 
-    html, body {
-      height: 100%;
-      margin: 0;
-      background: var(--bg-app);
-      color: #222;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      overflow: hidden;
-    }
+    /* ── Scrollbar ───────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 3px; }
 
-    /* ── Navbar ─────────────────────────────────────── */
-    #navbar {
-      height: 44px;
+    /* ── Layout ──────────────────────────────────────────────────── */
+    #app { display: flex; flex-direction: column; height: 100vh; }
+
+    #toolbar {
+      height: 46px;
       background: var(--bg-panel);
       border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 12px;
-      gap: 8px;
-      flex-shrink: 0;
+      display: flex; align-items: center; gap: 8px; padding: 0 14px;
+      flex-shrink: 0; z-index: 10;
     }
 
-    .p5-logo {
-      font-size: 20px;
-      font-weight: 900;
-      color: var(--p5-pink);
-      font-style: italic;
-      letter-spacing: -1px;
-      line-height: 1;
-      text-decoration: none;
-      padding: 2px 4px;
-    }
-    .p5-logo span { color: #222; }
+    #body { flex: 1; display: flex; overflow: hidden; min-height: 0; }
 
-    #sketch-name {
-      background: transparent;
-      border: 1px solid transparent;
-      color: #333;
-      font-size: 13px;
-      padding: 3px 8px;
-      border-radius: 4px;
-      outline: none;
-      max-width: 160px;
-      transition: border-color .15s;
+    /* ── Toolbar elements ────────────────────────────────────────── */
+    .logo {
+      font-family: var(--ui); font-size: 21px; font-weight: 900;
+      font-style: italic; color: var(--p5-pink); letter-spacing: -1px;
+      text-decoration: none; line-height: 1; padding: 0 2px; flex-shrink: 0;
     }
-    #sketch-name:focus { border-color: var(--border); background: rgba(0,0,0,.04); }
+    .logo span { color: #fff; }
+
+    .t-divider { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+    .t-spacer  { flex: 1; }
 
     .btn-run {
-      background: var(--p5-pink);
-      border: none;
-      color: #fff;
-      border-radius: 6px;
-      padding: 5px 14px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex; align-items: center; gap: 5px;
-      transition: background .15s;
+      background: var(--p5-pink); border: none; color: #fff;
+      border-radius: 6px; padding: 5px 16px; font-size: 13px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; gap: 5px;
+      font-family: var(--ui); transition: background .15s; flex-shrink: 0;
     }
-    .btn-run:hover { background: var(--p5-pink-h); }
+    .btn-run:hover { background: var(--p5-pink-dk); }
 
-    .btn-stop {
-      background: rgba(0,0,0,.05);
-      border: 1px solid var(--border);
-      color: #666;
-      border-radius: 6px;
-      padding: 5px 12px;
-      font-size: 13px;
-      cursor: pointer;
-      display: flex; align-items: center; gap: 5px;
-      transition: all .15s;
+    .btn-secondary {
+      background: rgba(255,255,255,.06); border: 1px solid var(--border);
+      color: #aaa; border-radius: 6px; padding: 5px 12px; font-size: 12px;
+      cursor: pointer; font-family: var(--ui); transition: all .15s;
+      display: flex; align-items: center; gap: 5px; flex-shrink: 0;
     }
-    .btn-stop:hover { background: rgba(0,0,0,.1); color: #333; }
-    .btn-stop.active { background: #ddd; color: #333; border-color: #bbb; }
+    .btn-secondary:hover { background: rgba(255,255,255,.1); color: #ddd; }
+    .btn-secondary.active { background: #ED225D22; color: var(--p5-pink); border-color: #ED225D44; }
 
-    .nav-divider { width: 1px; height: 22px; background: var(--border); margin: 0 4px; }
-    .nav-spacer  { flex: 1; }
-
-    .btn-icon {
-      background: transparent;
-      border: none;
-      color: #888;
-      font-size: 15px;
-      padding: 5px 7px;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: all .15s;
-      display: flex; align-items: center;
+    #sketch-name {
+      background: transparent; border: 1px solid transparent; color: #bbb;
+      font-size: 13px; padding: 3px 8px; border-radius: 4px; outline: none;
+      font-family: var(--ui); max-width: 150px; transition: border-color .15s;
     }
-    .btn-icon:hover { background: rgba(0,0,0,.06); color: #222; }
-    .btn-icon.active { color: var(--p5-pink); }
+    #sketch-name:focus { border-color: var(--border); background: rgba(255,255,255,.04); color: #eee; }
 
-    .badge-autorun {
-      font-size: 10px;
-      background: rgba(237,34,93,.2);
-      color: var(--p5-pink);
-      border: 1px solid rgba(237,34,93,.3);
-      border-radius: 10px;
-      padding: 1px 7px;
-      font-weight: 600;
-      cursor: default;
+    .preset-select {
+      background: rgba(255,255,255,.06); border: 1px solid var(--border);
+      color: #aaa; border-radius: 6px; padding: 5px 8px; font-size: 12px;
+      cursor: pointer; font-family: var(--ui); outline: none;
     }
+    .preset-select option { background: #2a2a2a; }
 
-    /* ── Layout ─────────────────────────────────────── */
-    #app {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-
-    #main {
-      flex: 1;
-      display: flex;
-      overflow: hidden;
-      min-height: 0;
-    }
-
-    /* ── Editor pane ────────────────────────────────── */
-    #editor-pane {
-      display: flex;
-      flex-direction: column;
-      width: 50%;
-      min-width: 200px;
+    /* ── Palette (left) ──────────────────────────────────────────── */
+    #palette {
+      width: 230px; flex-shrink: 0;
+      background: var(--bg-palette);
       border-right: 1px solid var(--border);
-      background: var(--bg-editor);
+      display: flex; flex-direction: column; overflow: hidden;
     }
 
-    .pane-tabs {
-      display: flex;
-      align-items: stretch;
-      background: var(--bg-panel);
-      border-bottom: 1px solid var(--border);
-      padding: 0 10px;
-      gap: 0;
+    #cat-list {
+      padding: 8px 7px 4px;
+      display: flex; flex-direction: column; gap: 1px;
       flex-shrink: 0;
     }
-    .pane-tab {
-      font-size: 12px;
-      padding: 7px 14px;
-      color: #888;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      user-select: none;
-      transition: color .15s;
-      white-space: nowrap;
+
+    .cat-btn {
+      display: flex; align-items: center; gap: 9px;
+      padding: 6px 10px; border-radius: 6px; border: none;
+      background: transparent; color: #999; font-size: 12px; font-weight: 700;
+      cursor: pointer; font-family: var(--ui); transition: all .12s; text-align: left;
+      width: 100%;
     }
-    .pane-tab.active { color: #222; border-bottom-color: var(--p5-pink); }
-    .pane-tab:hover:not(.active) { color: #444; }
+    .cat-btn:hover { background: rgba(255,255,255,.05); color: #ccc; }
+    .cat-btn.active { color: #fff; }
 
-    #cm-container { flex: 1; overflow: hidden; min-height: 0; }
-
-    .CodeMirror {
-      height: 100% !important;
-      font-family: 'Source Code Pro', 'Fira Code', monospace !important;
-      font-size: 13.5px !important;
-      line-height: 1.65 !important;
-      background: var(--bg-editor) !important;
-      color: #333 !important;
+    .cat-dot {
+      width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0;
     }
-    .CodeMirror-scroll { height: 100% !important; }
-    .CodeMirror-gutters { background: #f5f5f5 !important; border-right: 1px solid #e0e0e0 !important; }
-    .CodeMirror-linenumber { color: #aaa !important; }
 
-    /* ── Console ────────────────────────────────────── */
-    #console-pane {
-      height: 130px;
-      min-height: 60px;
-      max-height: 50%;
-      background: var(--bg-console);
+    #block-list {
+      flex: 1; overflow-y: auto; padding: 4px 8px 8px;
       border-top: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
     }
-    #console-header {
-      display: flex;
-      align-items: center;
-      padding: 4px 10px;
-      border-bottom: 1px solid var(--border);
-      gap: 6px;
-    }
-    #console-header span { font-size: 11px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: .7px; flex: 1; }
-    #console-clear { background: transparent; border: none; color: #999; font-size: 11px; cursor: pointer; padding: 2px 6px; border-radius: 3px; }
-    #console-clear:hover { color: #555; background: rgba(0,0,0,.06); }
-    #console-output {
-      flex: 1;
-      overflow-y: auto;
-      padding: 4px 10px;
-      font-family: 'Source Code Pro', monospace;
-      font-size: 12px;
-      line-height: 1.6;
-    }
-    .log-line  { color: #333; }
-    .log-warn  { color: #b8860b; }
-    .log-error { color: #c0392b; }
-    .log-info  { color: #2980b9; font-style: italic; }
 
-    /* ── Resize handle ──────────────────────────────── */
-    #resize-handle {
-      width: 5px;
-      background: transparent;
-      cursor: col-resize;
-      flex-shrink: 0;
-      transition: background .15s;
-      position: relative;
+    /* ── Palette blocks (draggable source) ───────────────────────── */
+    .pal-block {
+      display: flex; align-items: center; gap: 7px;
+      padding: 7px 10px; margin-bottom: 3px; border-radius: 6px;
+      font-family: var(--mono); font-size: 12px; font-weight: 600; color: #fff;
+      cursor: grab; user-select: none;
+      transition: transform .1s, box-shadow .1s;
     }
-    #resize-handle:hover, #resize-handle.dragging { background: var(--p5-pink); }
+    .pal-block:hover { transform: translateY(-1px); }
+    .pal-block:active { transform: none; }
 
-    /* ── Preview pane ───────────────────────────────── */
-    #preview-pane {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-width: 200px;
-      background: var(--bg-panel);
+    /* Scratch-style notch indicator */
+    .pal-block::before {
+      content: '';
+      display: block; width: 8px; height: 8px; flex-shrink: 0;
+      border-radius: 50%; background: rgba(0,0,0,.25);
+      border: 2px solid rgba(255,255,255,.2);
+    }
+
+    /* ── Workspace (center) ──────────────────────────────────────── */
+    #workspace {
+      flex: 1; display: flex; min-width: 0; overflow: hidden;
+    }
+
+    #zones {
+      flex: 1; overflow-y: auto; padding: 16px 18px;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+
+    /* ── Zone (setup / draw) ─────────────────────────────────────── */
+    .zone-header {
+      font-family: var(--mono); font-size: 13px; margin-bottom: 6px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .kw-function { color: #c678dd; }
+    .kw-name     { color: #61afef; font-weight: 700; }
+    .kw-punc     { color: #abb2bf; }
+
+    .zone-body {
+      margin-left: 14px;
+      min-height: 52px; border-radius: 6px;
+      border: 2px dashed rgba(255,255,255,.1);
+      background: rgba(255,255,255,.02);
+      padding: 4px; transition: border-color .15s, background .15s;
+    }
+    .zone-body.drag-over {
+      border-color: var(--p5-pink);
+      background: rgba(237,34,93,.05);
+    }
+
+    .zone-empty {
+      color: rgba(255,255,255,.2); font-size: 12px;
+      text-align: center; padding: 12px; font-family: var(--mono);
+      pointer-events: none;
+    }
+
+    .zone-footer {
+      font-family: var(--mono); font-size: 13px;
+      color: #abb2bf; margin-left: 14px; margin-top: 4px;
+    }
+
+    /* ── Workspace blocks ────────────────────────────────────────── */
+    .ws-block {
+      display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+      padding: 5px 8px 5px 12px; margin-bottom: 2px; border-radius: 5px;
+      font-family: var(--mono); font-size: 12.5px; font-weight: 600; color: #fff;
+      cursor: grab; user-select: none; position: relative;
+    }
+    .ws-block:last-child { margin-bottom: 0; }
+    .ws-block.dragging { opacity: .4; }
+
+    /* Scratch-style left notch */
+    .ws-block::before {
+      content: ''; position: absolute;
+      left: 0; top: 50%; transform: translateY(-50%);
+      width: 5px; height: 16px;
+      background: rgba(0,0,0,.2); border-radius: 0 4px 4px 0;
+    }
+
+    .drop-line {
+      height: 3px; background: var(--p5-pink); border-radius: 2px;
+      margin: 1px 0; pointer-events: none;
+    }
+
+    .block-fn   { font-weight: 700; white-space: nowrap; }
+    .block-punc { color: rgba(255,255,255,.5); font-size: 11px; }
+
+    .block-input {
+      background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.15);
+      border-radius: 4px; color: #fff; padding: 1px 6px;
+      font-family: var(--mono); font-size: 12px; outline: none;
+      min-width: 28px; transition: border-color .1s;
+    }
+    .block-input:focus { border-color: rgba(255,255,255,.4); }
+
+    .block-del {
+      margin-left: auto; background: rgba(0,0,0,.25); border: none;
+      color: rgba(255,255,255,.45); border-radius: 50%;
+      width: 18px; height: 18px; cursor: pointer; font-size: 14px; line-height: 1;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      transition: all .1s;
+    }
+    .block-del:hover { background: rgba(237,34,93,.6); color: #fff; }
+
+    /* ── Code panel ──────────────────────────────────────────────── */
+    #code-panel {
+      width: 300px; flex-shrink: 0;
+      background: #1a1a1a; border-left: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    #code-panel.hidden { display: none; }
+
+    #code-panel-header {
+      padding: 8px 12px; border-bottom: 1px solid var(--border);
+      font-size: 11px; font-weight: 700; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: .8px;
+    }
+
+    #code-pre {
+      flex: 1; overflow: auto; margin: 0;
+      font-family: var(--mono); font-size: 12px; line-height: 1.65;
+      color: #abb2bf; padding: 12px 14px; white-space: pre;
+    }
+
+    #btn-copy-code {
+      margin: 8px; flex-shrink: 0;
+      background: rgba(255,255,255,.06); border: 1px solid var(--border);
+      color: #999; border-radius: 5px; padding: 6px; font-size: 12px;
+      cursor: pointer; font-family: var(--ui); transition: all .15s;
+    }
+    #btn-copy-code:hover { background: rgba(255,255,255,.1); color: #ddd; }
+
+    /* ── Preview (right) ─────────────────────────────────────────── */
+    #preview {
+      width: 430px; flex-shrink: 0;
+      background: #1a1a1a; border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
     }
 
     #preview-header {
-      display: flex;
-      align-items: center;
-      padding: 0 12px;
-      height: 36px;
-      border-bottom: 1px solid var(--border);
-      gap: 8px;
-      flex-shrink: 0;
+      height: 36px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 12px; gap: 8px;
+      font-size: 11px; font-weight: 700; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: .8px; flex-shrink: 0;
     }
-    #preview-header span { font-size: 11px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: .7px; flex: 1; }
 
     #preview-frame {
-      flex: 1;
-      width: 100%;
-      border: none;
-      background: var(--preview-bg);
-    }
-
-    /* ── Resize console handle ──────────────────────── */
-    #console-resize {
-      height: 5px;
-      background: transparent;
-      cursor: row-resize;
-      flex-shrink: 0;
-      transition: background .15s;
-    }
-    #console-resize:hover, #console-resize.dragging { background: var(--p5-pink); }
-
-    /* ── Scrollbar ──────────────────────────────────── */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(0,0,0,.15); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.28); }
-
-    /* ── Tooltip ────────────────────────────────────── */
-    [title] { cursor: default; }
-
-    /* ── Shortcut hint ──────────────────────────────── */
-    .kbd {
-      display: inline-block;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.15);
-      border-radius: 3px;
-      font-family: monospace;
-      font-size: 10px;
-      padding: 1px 5px;
-      color: #aaa;
+      flex: 1; border: none; background: #f0f0f0; display: block;
     }
   </style>
 </head>
 <body>
-
 <div id="app">
 
-  <!-- ── Navbar ────────────────────────────────────────── -->
-  <div id="navbar">
-    <a class="p5-logo" href="#" title="p5.js Scratch">p5<span>*</span></a>
-
-    <div class="nav-divider"></div>
-
-    <input id="sketch-name" type="text" value="mijn_sketch" spellcheck="false" title="Schets naam" />
-
-    <div class="nav-divider"></div>
-
-    <button class="btn-run" id="btn-run" title="Uitvoeren (Ctrl+Enter)">
-      <i class="bi bi-play-fill"></i> Run
-    </button>
-    <button class="btn-stop" id="btn-stop" title="Stoppen">
-      <i class="bi bi-stop-fill"></i> Stop
-    </button>
-
-    <div class="nav-divider"></div>
-
-    <span id="autorun-badge" class="badge-autorun" title="Automatisch uitvoeren bij wijziging">
-      auto
-    </span>
-
-    <div class="nav-spacer"></div>
-
-    <button class="btn-icon" id="btn-font-dec" title="Kleiner lettertype">
-      <i class="bi bi-zoom-out"></i>
-    </button>
-    <button class="btn-icon" id="btn-font-inc" title="Groter lettertype">
-      <i class="bi bi-zoom-in"></i>
-    </button>
-
-    <div class="nav-divider"></div>
-
-    <button class="btn-icon" id="btn-copy" title="Code kopiëren">
-      <i class="bi bi-clipboard"></i>
-    </button>
-    <button class="btn-icon" id="btn-download" title="Downloaden als HTML">
-      <i class="bi bi-download"></i>
-    </button>
-
-    <div class="nav-divider"></div>
-
-    <select id="preset-select" class="form-select form-select-sm border-secondary text-secondary"
-      style="width:auto;font-size:12px;padding:3px 28px 3px 8px;cursor:pointer;" title="Voorbeeld laden">
+  <!-- ── Toolbar ────────────────────────────────────────────────── -->
+  <div id="toolbar">
+    <a class="logo" href="#" title="p5.js Blocks">p5<span>*</span></a>
+    <div class="t-divider"></div>
+    <input id="sketch-name" type="text" value="mijn_sketch" spellcheck="false" />
+    <div class="t-divider"></div>
+    <button class="btn-run" id="btn-run"><i class="bi bi-play-fill"></i> Run</button>
+    <button class="btn-secondary" id="btn-stop"><i class="bi bi-stop-fill"></i> Stop</button>
+    <div class="t-spacer"></div>
+    <button class="btn-secondary" id="btn-code"><i class="bi bi-code-slash"></i> Code</button>
+    <div class="t-divider"></div>
+    <select class="preset-select" id="preset-select">
       <option value="">Voorbeelden…</option>
-      <option value="lege_schets">Lege schets</option>
-      <option value="muis_cirkel">Muis volger</option>
-      <option value="regenboog_lus">Regenboog lus</option>
-      <option value="ballen">Stuiterende ballen</option>
-      <option value="perlin_golven">Perlin golven</option>
-      <option value="klok">Analoge klok</option>
+      <option value="leeg">Leeg</option>
+      <option value="regenboog">Regenboog</option>
+      <option value="muis_volger">Muis volger</option>
     </select>
   </div>
 
-  <!-- ── Main ──────────────────────────────────────────── -->
-  <div id="main">
+  <!-- ── Body ──────────────────────────────────────────────────── -->
+  <div id="body">
 
-    <!-- Editor pane -->
-    <div id="editor-pane">
-      <div class="pane-tabs">
-        <div class="pane-tab active">sketch.js</div>
-      </div>
-      <div id="cm-container">
-        <textarea id="code-editor"></textarea>
-      </div>
-      <div id="console-resize"></div>
-      <div id="console-pane">
-        <div id="console-header">
-          <span><i class="bi bi-terminal me-1"></i> Console</span>
-          <button id="console-clear" title="Console leegmaken"><i class="bi bi-trash3"></i> wissen</button>
+    <!-- Left: palette -->
+    <div id="palette">
+      <div id="cat-list"></div>
+      <div id="block-list"></div>
+    </div>
+
+    <!-- Center: workspace -->
+    <div id="workspace">
+      <div id="zones">
+        <div class="zone-wrap">
+          <div class="zone-header">
+            <span class="kw-function">function</span>
+            <span class="kw-name">setup</span>
+            <span class="kw-punc">() {</span>
+          </div>
+          <div class="zone-body" data-zone="setup"></div>
+          <div class="zone-footer">}</div>
         </div>
-        <div id="console-output">
-          <div class="log-info">Klaar. Druk op Run of gebruik Ctrl+Enter.</div>
+
+        <div class="zone-wrap">
+          <div class="zone-header">
+            <span class="kw-function">function</span>
+            <span class="kw-name">draw</span>
+            <span class="kw-punc">() {</span>
+          </div>
+          <div class="zone-body" data-zone="draw"></div>
+          <div class="zone-footer">}</div>
         </div>
+      </div>
+
+      <!-- Code panel (collapsible) -->
+      <div id="code-panel" class="hidden">
+        <div id="code-panel-header">Gegenereerde code</div>
+        <pre id="code-pre"></pre>
+        <button id="btn-copy-code"><i class="bi bi-clipboard"></i> Kopieer naar klembord</button>
       </div>
     </div>
 
-    <!-- Resize handle -->
-    <div id="resize-handle"></div>
-
-    <!-- Preview pane -->
-    <div id="preview-pane">
+    <!-- Right: preview -->
+    <div id="preview">
       <div id="preview-header">
-        <i class="bi bi-display" style="color:#666;font-size:13px;"></i>
-        <span>Preview</span>
-        <button class="btn-icon" id="btn-fullscreen" title="Volledig scherm preview">
-          <i class="bi bi-arrows-fullscreen"></i>
-        </button>
-        <button class="btn-icon" id="btn-reload-frame" title="Preview herladen">
-          <i class="bi bi-arrow-clockwise"></i>
-        </button>
+        <i class="bi bi-display"></i> Preview
       </div>
-      <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin" title="p5.js Preview"></iframe>
+      <iframe id="preview-frame" sandbox="allow-scripts" title="p5.js preview"></iframe>
     </div>
 
   </div>
 </div>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<!-- CodeMirror -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/codemirror.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/mode/javascript/javascript.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/addon/edit/closebrackets.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/addon/edit/matchbrackets.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/addon/comment/comment.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/addon/selection/active-line.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/addon/hint/show-hint.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/addon/hint/javascript-hint.min.js"></script>
-
 <script>
-// ── Presets ──────────────────────────────────────────────────────────
-const PRESETS = {
-  lege_schets: `function setup() {
-  createCanvas(400, 400);
-}
+// ═══════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════
 
-function draw() {
-  background(220);
-}`,
-
-  muis_cirkel: `function setup() {
-  createCanvas(400, 400);
-  background(30);
-}
-
-function draw() {
-  // Slepende staart
-  fill(30, 30, 30, 25);
-  noStroke();
-  rect(0, 0, width, height);
-
-  // Cirkel volgt muis
-  fill(100, 200, 255);
-  noStroke();
-  circle(mouseX, mouseY, 50);
-
-  // Kleine glans
-  fill(255, 255, 255, 120);
-  circle(mouseX - 8, mouseY - 8, 14);
-}`,
-
-  regenboog_lus: `function setup() {
-  createCanvas(400, 400);
-  colorMode(HSB, 360, 100, 100);
-  noStroke();
-}
-
-function draw() {
-  background(0, 0, 10, 30);
-
-  for (let i = 0; i < 12; i++) {
-    let hoek = i * TWO_PI / 12 + frameCount * 0.02;
-    let x = width / 2 + cos(hoek) * 140;
-    let y = height / 2 + sin(hoek) * 140;
-    fill((i * 30 + frameCount) % 360, 90, 100);
-    circle(x, y, 35);
-  }
-}`,
-
-  ballen: `let ballen = [];
-
-function setup() {
-  createCanvas(400, 400);
-  for (let i = 0; i < 8; i++) {
-    ballen.push({
-      x: random(width),
-      y: random(height),
-      vx: random(-4, 4),
-      vy: random(-4, 4),
-      r: random(15, 35),
-      kleur: [random(100,255), random(100,255), random(100,255)]
-    });
-  }
-}
-
-function draw() {
-  background(20);
-
-  for (let b of ballen) {
-    b.x += b.vx;
-    b.y += b.vy;
-
-    if (b.x - b.r < 0 || b.x + b.r > width)  b.vx *= -1;
-    if (b.y - b.r < 0 || b.y + b.r > height) b.vy *= -1;
-
-    fill(b.kleur[0], b.kleur[1], b.kleur[2]);
-    noStroke();
-    circle(b.x, b.y, b.r * 2);
-
-    // Glans
-    fill(255, 255, 255, 60);
-    circle(b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.5);
-  }
-}`,
-
-  perlin_golven: `let t = 0;
-
-function setup() {
-  createCanvas(400, 400);
-  colorMode(HSB, 360, 100, 100);
-}
-
-function draw() {
-  background(220, 30, 10);
-
-  for (let golft = 0; golft < 4; golft++) {
-    stroke((golft * 60 + t * 30) % 360, 80, 100, 0.7);
-    strokeWeight(2);
-    noFill();
-
-    beginShape();
-    for (let x = 0; x <= width; x += 4) {
-      let n = noise(x * 0.006, t + golft * 0.5);
-      let y = map(n, 0, 1, height * 0.1, height * 0.9);
-      vertex(x, y);
-    }
-    endShape();
-  }
-  t += 0.008;
-}`,
-
-  klok: `function setup() {
-  createCanvas(400, 400);
-  angleMode(DEGREES);
-  textAlign(CENTER, CENTER);
-}
-
-function draw() {
-  background(25);
-
-  // Wijzerplaat
-  translate(width / 2, height / 2);
-  fill(40); stroke(100); strokeWeight(2);
-  circle(0, 0, 340);
-
-  // Uurmarkeringen
-  for (let i = 0; i < 12; i++) {
-    let hoek = i * 30 - 90;
-    let x1 = cos(hoek) * 155, y1 = sin(hoek) * 155;
-    let x2 = cos(hoek) * 165, y2 = sin(hoek) * 165;
-    stroke(180); strokeWeight(i % 3 === 0 ? 3 : 1);
-    line(x1, y1, x2, y2);
-  }
-
-  // Huidige tijd
-  let h = hour() % 12, m = minute(), s = second();
-  let hHoek = h * 30 + m * 0.5 - 90;
-  let mHoek = m * 6 - 90;
-  let sHoek = s * 6 - 90;
-
-  // Uurwijzer
-  stroke(240); strokeWeight(5); strokeCap(ROUND);
-  line(0, 0, cos(hHoek) * 90, sin(hHoek) * 90);
-
-  // Minuutwijzer
-  stroke(220); strokeWeight(3);
-  line(0, 0, cos(mHoek) * 130, sin(mHoek) * 130);
-
-  // Secondewijzer
-  stroke(237, 34, 93); strokeWeight(1.5);
-  line(0, 0, cos(sHoek) * 145, sin(sHoek) * 145);
-
-  // Middelpunt
-  fill(237, 34, 93); noStroke();
-  circle(0, 0, 10);
-}`
+const CATEGORIES = {
+  setup: {
+    label: 'Setup', color: '#E8A838',
+    blocks: [
+      { type: 'createCanvas',  label: 'createCanvas',  params: [{name:'w',def:'400'},{name:'h',def:'400'}],           code: p=>`createCanvas(${p.w}, ${p.h});` },
+      { type: 'background',    label: 'background',    params: [{name:'c',def:'220'}],                                code: p=>`background(${p.c});` },
+      { type: 'frameRate',     label: 'frameRate',     params: [{name:'fps',def:'30'}],                               code: p=>`frameRate(${p.fps});` },
+    ]
+  },
+  shapes: {
+    label: 'Vormen', color: '#4C97FF',
+    blocks: [
+      { type: 'ellipse',  label: 'ellipse',  params: [{name:'x',def:'200'},{name:'y',def:'200'},{name:'w',def:'80'},{name:'h',def:'80'}],    code: p=>`ellipse(${p.x}, ${p.y}, ${p.w}, ${p.h});` },
+      { type: 'circle',   label: 'circle',   params: [{name:'x',def:'200'},{name:'y',def:'200'},{name:'d',def:'100'}],                       code: p=>`circle(${p.x}, ${p.y}, ${p.d});` },
+      { type: 'rect',     label: 'rect',     params: [{name:'x',def:'50'},{name:'y',def:'50'},{name:'w',def:'100'},{name:'h',def:'80'}],     code: p=>`rect(${p.x}, ${p.y}, ${p.w}, ${p.h});` },
+      { type: 'line',     label: 'line',     params: [{name:'x1',def:'0'},{name:'y1',def:'0'},{name:'x2',def:'200'},{name:'y2',def:'200'}],  code: p=>`line(${p.x1}, ${p.y1}, ${p.x2}, ${p.y2});` },
+      { type: 'triangle', label: 'triangle', params: [{name:'x1',def:'100'},{name:'y1',def:'50'},{name:'x2',def:'50'},{name:'y2',def:'150'},{name:'x3',def:'150'},{name:'y3',def:'150'}], code: p=>`triangle(${p.x1},${p.y1},${p.x2},${p.y2},${p.x3},${p.y3});` },
+      { type: 'point',    label: 'point',    params: [{name:'x',def:'100'},{name:'y',def:'100'}],                                            code: p=>`point(${p.x}, ${p.y});` },
+      { type: 'arc',      label: 'arc',      params: [{name:'x',def:'200'},{name:'y',def:'200'},{name:'w',def:'100'},{name:'h',def:'100'},{name:'start',def:'0'},{name:'stop',def:'PI'}], code: p=>`arc(${p.x},${p.y},${p.w},${p.h},${p.start},${p.stop});` },
+    ]
+  },
+  kleur: {
+    label: 'Kleur', color: '#9966FF',
+    blocks: [
+      { type: 'fill',         label: 'fill',         params: [{name:'r',def:'255'},{name:'g',def:'100'},{name:'b',def:'50'}],  code: p=>`fill(${p.r}, ${p.g}, ${p.b});` },
+      { type: 'stroke',       label: 'stroke',       params: [{name:'r',def:'0'},{name:'g',def:'0'},{name:'b',def:'0'}],       code: p=>`stroke(${p.r}, ${p.g}, ${p.b});` },
+      { type: 'strokeWeight', label: 'strokeWeight', params: [{name:'w',def:'2'}],                                             code: p=>`strokeWeight(${p.w});` },
+      { type: 'noFill',       label: 'noFill',       params: [],                                                               code: ()=>'noFill();' },
+      { type: 'noStroke',     label: 'noStroke',     params: [],                                                               code: ()=>'noStroke();' },
+      { type: 'colorMode',    label: 'colorMode',    params: [{name:'mode',def:'HSB'}],                                        code: p=>`colorMode(${p.mode});` },
+    ]
+  },
+  transform: {
+    label: 'Transform', color: '#CF63CF',
+    blocks: [
+      { type: 'translate', label: 'translate', params: [{name:'x',def:'100'},{name:'y',def:'100'}], code: p=>`translate(${p.x}, ${p.y});` },
+      { type: 'rotate',    label: 'rotate',    params: [{name:'a',def:'PI/4'}],                     code: p=>`rotate(${p.a});` },
+      { type: 'scale',     label: 'scale',     params: [{name:'s',def:'1.5'}],                      code: p=>`scale(${p.s});` },
+      { type: 'push',      label: 'push',      params: [],                                          code: ()=>'push();' },
+      { type: 'pop',       label: 'pop',       params: [],                                          code: ()=>'pop();' },
+    ]
+  },
+  interactie: {
+    label: 'Interactie', color: '#FF6680',
+    blocks: [
+      { type: 'text',     label: 'text',     params: [{name:'txt',def:"'Hallo!'"},{name:'x',def:'50'},{name:'y',def:'50'}], code: p=>`text(${p.txt}, ${p.x}, ${p.y});` },
+      { type: 'textSize', label: 'textSize', params: [{name:'s',def:'32'}],                                                 code: p=>`textSize(${p.s});` },
+      { type: 'mouseX',   label: 'mouseX',   params: [], isExpr: true,                                                     code: ()=>'mouseX' },
+      { type: 'mouseY',   label: 'mouseY',   params: [], isExpr: true,                                                     code: ()=>'mouseY' },
+    ]
+  },
+  wiskunde: {
+    label: 'Wiskunde', color: '#59C059',
+    blocks: [
+      { type: 'random', label: 'random', params: [{name:'min',def:'0'},{name:'max',def:'400'}],                                                             isExpr: true, code: p=>`random(${p.min}, ${p.max})` },
+      { type: 'map',    label: 'map',    params: [{name:'v',def:'mouseX'},{name:'a',def:'0'},{name:'b',def:'400'},{name:'c',def:'0'},{name:'d',def:'255'}], isExpr: true, code: p=>`map(${p.v},${p.a},${p.b},${p.c},${p.d})` },
+      { type: 'sin',    label: 'sin',    params: [{name:'a',def:'frameCount*0.05'}], isExpr: true, code: p=>`sin(${p.a})` },
+      { type: 'cos',    label: 'cos',    params: [{name:'a',def:'frameCount*0.05'}], isExpr: true, code: p=>`cos(${p.a})` },
+      { type: 'noise',  label: 'noise',  params: [{name:'x',def:'frameCount*0.01'}], isExpr: true, code: p=>`noise(${p.x})` },
+    ]
+  },
+  controle: {
+    label: 'Controle', color: '#FFAB19',
+    blocks: [
+      { type: 'for_loop', label: 'for',  isCtrl: true, params: [{name:'v',def:'i'},{name:'start',def:'0'},{name:'end',def:'10'},{name:'step',def:'1'}], code: p=>`for (let ${p.v} = ${p.start}; ${p.v} < ${p.end}; ${p.v} += ${p.step}) {` },
+      { type: 'if_block', label: 'if',   isCtrl: true, params: [{name:'cond',def:'mouseIsPressed'}],                                                   code: p=>`if (${p.cond}) {` },
+    ]
+  },
 };
 
-const DEFAULT_CODE = PRESETS.muis_cirkel;
-
-// ── CodeMirror setup ──────────────────────────────────────────────────
-const editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
-  mode: 'javascript',
-  theme: 'eclipse',
-  lineNumbers: true,
-  autoCloseBrackets: true,
-  matchBrackets: true,
-  styleActiveLine: true,
-  indentUnit: 2,
-  tabSize: 2,
-  indentWithTabs: false,
-  extraKeys: {
-    'Ctrl-Enter': runSketch,
-    'Ctrl-/':    'toggleComment',
-    'Tab': (cm) => {
-      if (cm.somethingSelected()) cm.indentSelection('add');
-      else cm.replaceSelection('  ', 'end');
-    }
+function findDef(type) {
+  for (const cat of Object.values(CATEGORIES)) {
+    const b = cat.blocks.find(b => b.type === type);
+    if (b) return { ...b, color: cat.color };
   }
-});
+  return null;
+}
 
-editor.setValue(DEFAULT_CODE);
+// ── State ──────────────────────────────────────────────────────
+let _uid = 0;
+const newId = () => `b${++_uid}`;
 
-// ── Auto-run debounce ─────────────────────────────────────────────────
-let autoRunTimer = null;
-let autoRun = true;
+const state = {
+  setup: [], draw: [],
+  activeCat: 'shapes',
+  showCode: false,
+  dragItem: null,
+  dropTarget: null,
+};
 
-editor.on('change', () => {
-  if (!autoRun) return;
-  clearTimeout(autoRunTimer);
-  autoRunTimer = setTimeout(runSketch, 900);
-});
+// ── Presets ────────────────────────────────────────────────────
+function makeBlock(type, overrides = {}) {
+  const def = findDef(type);
+  const vals = {};
+  def.params.forEach(p => { vals[p.name] = overrides[p.name] ?? p.def; });
+  return { id: newId(), type, values: vals };
+}
 
-// ── Run sketch ────────────────────────────────────────────────────────
-let isRunning = false;
-const frame = document.getElementById('preview-frame');
+const PRESETS = {
+  leeg: { setup: [], draw: [] },
+  regenboog: {
+    setup: [
+      makeBlock('createCanvas', {w:'400',h:'400'}),
+      makeBlock('colorMode', {mode:'HSB'}),
+    ],
+    draw: [
+      makeBlock('background', {c:'0, 0, 20'}),
+      makeBlock('for_loop', {v:'i',start:'0',end:'36',step:'1'}),
+      makeBlock('fill', {r:'i*10',g:'255',b:'255'}),
+      makeBlock('noStroke'),
+      makeBlock('circle', {x:'200+cos(i*TWO_PI/36)*150', y:'200+sin(i*TWO_PI/36)*150', d:'40'}),
+    ],
+  },
+  muis_volger: {
+    setup: [ makeBlock('createCanvas', {w:'400',h:'400'}) ],
+    draw: [
+      makeBlock('background', {c:'30, 30, 40'}),
+      makeBlock('fill', {r:'100',g:'200',b:'255'}),
+      makeBlock('noStroke'),
+      makeBlock('circle', {x:'mouseX',y:'mouseY',d:'60'}),
+      makeBlock('fill', {r:'255',g:'100',b:'150'}),
+      makeBlock('circle', {x:'mouseX+30',y:'mouseY-30',d:'30'}),
+    ],
+  },
+};
 
-function buildHtml(code) {
-  // Intercept console methods via postMessage
-  const consoleProxy = `
-    (function() {
-      const _log = console.log, _warn = console.warn, _error = console.error;
-      const send = (type, args) => parent.postMessage({ _p5console: true, type, msg: args.map(a => {
-        try { return typeof a === 'object' ? JSON.stringify(a) : String(a); } catch(e) { return String(a); }
-      }).join(' ') }, '*');
-      console.log   = (...a) => { send('log',   a); _log(...a);   };
-      console.warn  = (...a) => { send('warn',  a); _warn(...a);  };
-      console.error = (...a) => { send('error', a); _error(...a); };
-      window.onerror = (msg, src, line, col) => {
-        send('error', [\`Fout (regel \${line}): \${msg}\`]);
-        return false;
-      };
-    })();
-  `;
+// ═══════════════════════════════════════════════════════════════
+// CODE GENERATION
+// ═══════════════════════════════════════════════════════════════
 
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8"/>
-<style>
-  html,body { margin:0; padding:0; overflow:hidden; background:#f0f0f0; }
-  canvas { display:block; }
-</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"><\/script>
-<script>${consoleProxy}<\/script>
-</head>
-<body>
-<script>
-${code}
-<\/script>
-</body>
-</html>`;
+function generateCode() {
+  const ind = (s, n) => '  '.repeat(n) + s;
+
+  function process(blocks) {
+    const lines = [];
+    let lvl = 1;
+    const expanded = [];
+    const stack = [];
+    for (const b of blocks) {
+      expanded.push(b);
+      if (findDef(b.type)?.isCtrl) stack.push('_close');
+    }
+    while (stack.length) expanded.push({ _close: true });
+
+    for (const b of expanded) {
+      if (b._close) {
+        lvl = Math.max(1, lvl - 1);
+        lines.push(ind('}', lvl));
+        continue;
+      }
+      const def = findDef(b.type);
+      if (!def) continue;
+      lines.push(ind(def.code(b.values), lvl));
+      if (def.isCtrl) lvl++;
+    }
+    return lines.join('\n');
+  }
+
+  return `function setup() {\n${process(state.setup)}\n}\n\nfunction draw() {\n${process(state.draw)}\n}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════
+
+function darken(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgb(${Math.round(r*.55)},${Math.round(g*.55)},${Math.round(b*.55)})`;
+}
+
+function renderCategories() {
+  const el = document.getElementById('cat-list');
+  el.innerHTML = '';
+  for (const [key, cat] of Object.entries(CATEGORIES)) {
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn' + (key === state.activeCat ? ' active' : '');
+    if (key === state.activeCat) btn.style.background = cat.color + '22';
+    btn.innerHTML = `<span class="cat-dot" style="background:${cat.color}"></span>${cat.label}`;
+    btn.onclick = () => { state.activeCat = key; renderCategories(); renderBlockList(); };
+    el.appendChild(btn);
+  }
+}
+
+function renderBlockList() {
+  const el = document.getElementById('block-list');
+  el.innerHTML = '';
+  const cat = CATEGORIES[state.activeCat];
+  if (!cat) return;
+
+  cat.blocks.forEach(block => {
+    const div = document.createElement('div');
+    div.className = 'pal-block';
+    div.style.background = cat.color;
+    div.style.boxShadow = `0 3px 0 ${darken(cat.color)}, inset 0 1px 0 rgba(255,255,255,.12)`;
+    div.draggable = true;
+
+    let inner = `<span>${block.label}</span>`;
+    if (block.params.length) {
+      inner += `<span style="color:rgba(255,255,255,.5);font-size:11px">(${block.params.map(p=>p.name).join(', ')})</span>`;
+    }
+    div.innerHTML = inner;
+
+    div.addEventListener('dragstart', e => {
+      const vals = {};
+      block.params.forEach(p => vals[p.name] = p.def);
+      state.dragItem = { type: block.type, color: cat.color, values: vals, source: 'palette' };
+      e.dataTransfer.effectAllowed = 'copy';
+    });
+    div.addEventListener('dragend', () => {
+      state.dragItem = null;
+      state.dropTarget = null;
+      renderZones();
+    });
+    el.appendChild(div);
+  });
+}
+
+function renderZones() {
+  renderZone('setup');
+  renderZone('draw');
+}
+
+function renderZone(zone) {
+  const body = document.querySelector(`.zone-body[data-zone="${zone}"]`);
+  const blocks = state[zone];
+  body.innerHTML = '';
+
+  if (blocks.length === 0) {
+    body.innerHTML = '<div class="zone-empty">Sleep blokken hierheen…</div>';
+  }
+
+  blocks.forEach((block, idx) => {
+    if (state.dropTarget?.zone === zone && state.dropTarget?.idx === idx) {
+      body.appendChild(makeDropLine());
+    }
+
+    const def = findDef(block.type);
+    if (!def) return;
+
+    const div = document.createElement('div');
+    div.className = 'ws-block';
+    div.style.background = def.color;
+    div.style.boxShadow = `0 3px 0 ${darken(def.color)}, inset 0 1px 0 rgba(255,255,255,.1)`;
+    div.draggable = true;
+
+    // Function name
+    const fnSpan = document.createElement('span');
+    fnSpan.className = 'block-fn';
+    fnSpan.textContent = def.label;
+    div.appendChild(fnSpan);
+
+    if (def.params.length) {
+      div.appendChild(punc('('));
+      def.params.forEach((p, pi) => {
+        if (pi > 0) div.appendChild(punc(', '));
+        const inp = document.createElement('input');
+        inp.className = 'block-input';
+        inp.value = block.values[p.name] ?? p.def;
+        inp.style.width = inputWidth(inp.value);
+        inp.addEventListener('input', e => {
+          e.stopPropagation();
+          block.values[p.name] = e.target.value;
+          e.target.style.width = inputWidth(e.target.value);
+          scheduleRun();
+          updateCodePanel();
+        });
+        inp.addEventListener('click', e => e.stopPropagation());
+        inp.addEventListener('mousedown', e => e.stopPropagation());
+        div.appendChild(inp);
+      });
+      const closing = def.isCtrl ? ') {' : (def.isExpr ? ')' : ');');
+      div.appendChild(punc(closing));
+    } else {
+      if (def.isCtrl) div.appendChild(punc(' {'));
+      else if (!def.isExpr) div.appendChild(punc(';'));
+    }
+
+    // Delete button
+    const del = document.createElement('button');
+    del.className = 'block-del';
+    del.innerHTML = '&times;';
+    del.title = 'Verwijder';
+    del.addEventListener('click', e => {
+      e.stopPropagation();
+      state[zone].splice(idx, 1);
+      renderZones();
+      scheduleRun();
+    });
+    div.appendChild(del);
+
+    // Drag from workspace
+    div.addEventListener('dragstart', e => {
+      state.dragItem = { ...block, color: def.color, source: 'workspace', sourceZone: zone, sourceIdx: idx };
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => div.classList.add('dragging'), 0);
+    });
+    div.addEventListener('dragend', () => {
+      div.classList.remove('dragging');
+      state.dragItem = null;
+      state.dropTarget = null;
+      renderZones();
+    });
+    div.addEventListener('dragover', e => {
+      e.preventDefault(); e.stopPropagation();
+      if (state.dropTarget?.zone !== zone || state.dropTarget?.idx !== idx) {
+        state.dropTarget = { zone, idx };
+        renderZones();
+      }
+    });
+
+    body.appendChild(div);
+  });
+
+  // Drop line at end
+  if (state.dropTarget?.zone === zone && state.dropTarget?.idx === blocks.length) {
+    body.appendChild(makeDropLine());
+  }
+
+  body.classList.toggle('drag-over', state.dropTarget?.zone === zone);
+
+  body.addEventListener('dragover', e => {
+    e.preventDefault();
+    if (!state.dropTarget || state.dropTarget.zone !== zone) {
+      state.dropTarget = { zone, idx: blocks.length };
+      renderZones();
+    }
+  });
+  body.addEventListener('dragleave', e => {
+    if (!body.contains(e.relatedTarget)) {
+      state.dropTarget = null;
+      renderZones();
+    }
+  });
+  body.addEventListener('drop', e => {
+    e.preventDefault();
+    handleDrop(zone);
+  });
+}
+
+function punc(text) {
+  const s = document.createElement('span');
+  s.className = 'block-punc';
+  s.textContent = text;
+  return s;
+}
+
+function inputWidth(val) {
+  return Math.max(28, val.length * 7.5 + 14) + 'px';
+}
+
+function makeDropLine() {
+  const d = document.createElement('div');
+  d.className = 'drop-line';
+  return d;
+}
+
+function handleDrop(zone) {
+  const item = state.dragItem;
+  if (!item) return;
+  const targetIdx = state.dropTarget?.idx ?? state[zone].length;
+
+  if (item.source === 'palette') {
+    state[zone].splice(targetIdx, 0, { id: newId(), type: item.type, values: { ...item.values } });
+  } else {
+    const src = state[item.sourceZone];
+    const [removed] = src.splice(item.sourceIdx, 1);
+    const dest = state[zone];
+    const adj = (item.sourceZone === zone && item.sourceIdx < targetIdx) ? targetIdx - 1 : targetIdx;
+    dest.splice(Math.max(0, adj), 0, { ...removed });
+  }
+
+  state.dragItem = null;
+  state.dropTarget = null;
+  renderZones();
+  scheduleRun();
+}
+
+function updateCodePanel() {
+  if (!state.showCode) return;
+  document.getElementById('code-pre').textContent = generateCode();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PREVIEW
+// ═══════════════════════════════════════════════════════════════
+
+let runTimer = null;
+
+function scheduleRun() {
+  clearTimeout(runTimer);
+  runTimer = setTimeout(runSketch, 400);
 }
 
 function runSketch() {
-  const code = editor.getValue();
-  clearConsole();
-  logConsole('info', 'Sketch gestart…');
-  frame.srcdoc = buildHtml(code);
-  isRunning = true;
-  updateRunState();
+  const code = generateCode();
+  document.getElementById('preview-frame').srcdoc =
+    `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<style>html,body{margin:0;overflow:hidden;background:#f0f0f0;}canvas{display:block;}</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"><\/script>
+</head><body><script>${code}<\/script></body></html>`;
 }
 
-function stopSketch() {
-  frame.srcdoc = '';
-  isRunning = false;
-  logConsole('info', 'Sketch gestopt.');
-  updateRunState();
+function loadPreset(name) {
+  _uid = 0;
+  const p = PRESETS[name];
+  if (!p) return;
+  state.setup = p.setup.map(b => ({ ...b, id: newId(), values: { ...b.values } }));
+  state.draw  = p.draw.map(b => ({ ...b, id: newId(), values: { ...b.values } }));
+  renderZones();
+  scheduleRun();
 }
 
-function updateRunState() {
-  document.getElementById('btn-stop').classList.toggle('active', isRunning);
-}
+// ═══════════════════════════════════════════════════════════════
+// EVENTS
+// ═══════════════════════════════════════════════════════════════
 
-// ── Console ───────────────────────────────────────────────────────────
-const consoleOutput = document.getElementById('console-output');
-
-function logConsole(type, msg) {
-  const div = document.createElement('div');
-  div.className = `log-${type}`;
-  div.textContent = (type === 'error' ? '✖ ' : type === 'warn' ? '⚠ ' : '') + msg;
-  consoleOutput.appendChild(div);
-  consoleOutput.scrollTop = consoleOutput.scrollHeight;
-}
-
-function clearConsole() {
-  consoleOutput.innerHTML = '';
-}
-
-window.addEventListener('message', (e) => {
-  if (e.data && e.data._p5console) {
-    logConsole(e.data.type, e.data.msg);
-  }
+document.getElementById('btn-run').addEventListener('click', () => {
+  renderZones();
+  runSketch();
 });
 
-document.getElementById('console-clear').addEventListener('click', clearConsole);
-
-// ── Buttons ───────────────────────────────────────────────────────────
-document.getElementById('btn-run').addEventListener('click', runSketch);
-document.getElementById('btn-stop').addEventListener('click', stopSketch);
-document.getElementById('btn-reload-frame').addEventListener('click', runSketch);
-
-document.getElementById('btn-copy').addEventListener('click', () => {
-  navigator.clipboard?.writeText(editor.getValue()).then(() => {
-    logConsole('info', 'Code gekopieerd naar klembord.');
-  });
+document.getElementById('btn-stop').addEventListener('click', () => {
+  document.getElementById('preview-frame').srcdoc = '';
+  clearTimeout(runTimer);
 });
 
-document.getElementById('btn-download').addEventListener('click', () => {
-  const html = buildHtml(editor.getValue());
-  const name = (document.getElementById('sketch-name').value.trim() || 'sketch') + '.html';
-  const blob = new Blob([html], { type: 'text/html' });
-  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
-  a.click(); URL.revokeObjectURL(a.href);
-  logConsole('info', `Gedownload als ${name}`);
+document.getElementById('btn-code').addEventListener('click', () => {
+  state.showCode = !state.showCode;
+  document.getElementById('code-panel').classList.toggle('hidden', !state.showCode);
+  document.getElementById('btn-code').classList.toggle('active', state.showCode);
+  updateCodePanel();
 });
 
-document.getElementById('btn-fullscreen').addEventListener('click', () => {
-  if (frame.requestFullscreen) frame.requestFullscreen();
+document.getElementById('btn-copy-code').addEventListener('click', () => {
+  navigator.clipboard?.writeText(generateCode());
 });
 
-// Font size
-let fontSize = 13.5;
-document.getElementById('btn-font-inc').addEventListener('click', () => {
-  fontSize = Math.min(22, fontSize + 1);
-  document.querySelector('.CodeMirror').style.fontSize = fontSize + 'px';
-  editor.refresh();
-});
-document.getElementById('btn-font-dec').addEventListener('click', () => {
-  fontSize = Math.max(9, fontSize - 1);
-  document.querySelector('.CodeMirror').style.fontSize = fontSize + 'px';
-  editor.refresh();
-});
-
-// Auto-run toggle
-const badge = document.getElementById('autorun-badge');
-badge.style.cursor = 'pointer';
-badge.addEventListener('click', () => {
-  autoRun = !autoRun;
-  badge.style.opacity = autoRun ? '1' : '0.35';
-  badge.title = autoRun ? 'Automatisch uitvoeren: AAN' : 'Automatisch uitvoeren: UIT';
-  logConsole('info', `Auto-run: ${autoRun ? 'aan' : 'uit'}`);
-});
-
-// Presets
 document.getElementById('preset-select').addEventListener('change', function () {
-  const key = this.value;
-  if (!key) return;
-  if (PRESETS[key]) {
-    editor.setValue(PRESETS[key]);
-    document.getElementById('sketch-name').value = key;
-    runSketch();
-  }
-  this.value = '';
+  if (this.value) { loadPreset(this.value); this.value = ''; }
 });
 
-// ── Horizontal resize ─────────────────────────────────────────────────
-const handle = document.getElementById('resize-handle');
-const editorPane = document.getElementById('editor-pane');
-let resizing = false, startX = 0, startW = 0;
-
-handle.addEventListener('mousedown', (e) => {
-  resizing = true;
-  startX = e.clientX;
-  startW = editorPane.offsetWidth;
-  handle.classList.add('dragging');
-  document.body.style.cursor = 'col-resize';
-  document.body.style.userSelect = 'none';
-});
-
-document.addEventListener('mousemove', (e) => {
-  if (!resizing) return;
-  const newW = Math.max(200, Math.min(startW + e.clientX - startX, window.innerWidth - 200));
-  editorPane.style.width = newW + 'px';
-});
-
-document.addEventListener('mouseup', () => {
-  if (!resizing) return;
-  resizing = false;
-  handle.classList.remove('dragging');
-  document.body.style.cursor = '';
-  document.body.style.userSelect = '';
-  editor.refresh();
-});
-
-// ── Console vertical resize ───────────────────────────────────────────
-const consoleResize = document.getElementById('console-resize');
-const consolePane   = document.getElementById('console-pane');
-let cResizing = false, cStartY = 0, cStartH = 0;
-
-consoleResize.addEventListener('mousedown', (e) => {
-  cResizing = true;
-  cStartY = e.clientY;
-  cStartH = consolePane.offsetHeight;
-  consoleResize.classList.add('dragging');
-  document.body.style.cursor = 'row-resize';
-  document.body.style.userSelect = 'none';
-});
-
-document.addEventListener('mousemove', (e) => {
-  if (!cResizing) return;
-  const delta = cStartY - e.clientY;
-  const newH = Math.max(40, Math.min(cStartH + delta, 400));
-  consolePane.style.height = newH + 'px';
-});
-
-document.addEventListener('mouseup', () => {
-  if (!cResizing) return;
-  cResizing = false;
-  consoleResize.classList.remove('dragging');
-  document.body.style.cursor = '';
-  document.body.style.userSelect = '';
-});
-
-// ── Init ──────────────────────────────────────────────────────────────
-runSketch();
+// ── Init ───────────────────────────────────────────────────────
+renderCategories();
+loadPreset('muis_volger');
 </script>
 </body>
 </html>
