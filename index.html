@@ -224,6 +224,14 @@
       font-family: var(--mono); font-size: 16px;
       color: #aaa; padding: 2px 6px; margin-bottom: 2px;
     }
+    .else-hdr { color: #888; }
+    .else-hdr .kw-function { color: #c792ea; }
+    .btn-else {
+      font-size: 10px; padding: 1px 5px; border-radius: 4px; border: 1px solid currentColor;
+      background: transparent; cursor: pointer; color: #999; font-family: var(--mono);
+      margin-left: 4px; line-height: 1.4;
+    }
+    .btn-else:hover { color: #c792ea; border-color: #c792ea; }
 
     .block-fn   { font-weight: 400; white-space: nowrap; color: #1a1a1a; }
     .block-punc { color: #999; font-size: 13px; }
@@ -347,6 +355,14 @@
     #preview-frame {
       flex: 1; border: none; background: #f0f0f0; display: block;
     }
+
+    #error-bar {
+      background: #fff0f0; color: #c0392b; border-top: 1px solid #f5c6c6;
+      font-family: var(--mono); font-size: 11px; padding: 6px 10px;
+      white-space: pre-wrap; word-break: break-all; max-height: 72px;
+      overflow-y: auto; flex-shrink: 0;
+    }
+    #error-bar.hidden { display: none; }
   </style>
 </head>
 <body>
@@ -361,6 +377,10 @@
     <button class="btn-run" id="btn-run"><i class="bi bi-play-fill"></i> Run</button>
     <button class="btn-secondary" id="btn-stop"><i class="bi bi-stop-fill"></i> Stop</button>
     <span style="font-size:11px;color:#bbb;margin-left:6px;font-family:var(--mono)">p5 v2.0.2</span>
+    <div class="t-divider"></div>
+    <button class="btn-secondary" id="btn-export" title="Exporteer als JSON"><i class="bi bi-download"></i></button>
+    <button class="btn-secondary" id="btn-import" title="Importeer JSON"><i class="bi bi-upload"></i></button>
+    <input type="file" id="file-import" accept=".json" style="display:none" />
     <div class="t-spacer"></div>
     <button class="btn-secondary" id="btn-code"><i class="bi bi-code-slash"></i> Code</button>
     <button class="btn-secondary" id="btn-lang">EN</button>
@@ -428,6 +448,7 @@
         <i class="bi bi-display"></i> Preview
       </div>
       <iframe id="preview-frame" sandbox="allow-scripts" title="p5.js preview"></iframe>
+      <div id="error-bar" class="hidden"></div>
     </div>
 
   </div>
@@ -611,13 +632,18 @@ function makeBlock(type, overrides = {}) {
 function deepCopyBlock(b) {
   const copy = { ...b, id: newId(), values: { ...b.values } };
   if (b.children) copy.children = b.children.map(deepCopyBlock);
+  if (b.elseBranch) copy.elseBranch = b.elseBranch.map(deepCopyBlock);
   return copy;
 }
 
 function getChildrenById(blocks, id) {
+  const isElse = id.endsWith(':else');
+  const realId = isElse ? id.slice(0, -5) : id;
   for (const b of blocks) {
-    if (b.id === id) return b.children;
-    if (b.children) { const r = getChildrenById(b.children, id); if (r) return r; }
+    if (b.id === realId) return isElse ? (b.elseBranch || (b.elseBranch = [])) : b.children;
+    const r = getChildrenById(b.children || [], id);
+    if (r) return r;
+    if (b.elseBranch) { const r2 = getChildrenById(b.elseBranch, id); if (r2) return r2; }
   }
   return null;
 }
@@ -695,6 +721,10 @@ function generateCode() {
       if (def.isCtrl) {
         lines.push(ind(def.code(resolved), lvl));
         lines.push(...process(b.children || [], lvl + 1));
+        if (b.hasElse) {
+          lines.push(ind('} else {', lvl));
+          lines.push(...process(b.elseBranch || [], lvl + 1));
+        }
         lines.push(ind('}', lvl));
       } else {
         lines.push(ind(def.code(resolved), lvl));
@@ -872,6 +902,20 @@ function buildBlockDiv(block, def, zone, parentId, idx) {
                 renderZones(); scheduleRun(); updateCodePanel();
               });
               mini.appendChild(xb);
+              mini.addEventListener('dragover', e => {
+                if (!state.dragItem?.isExpr) return;
+                e.preventDefault(); e.stopPropagation(); mini.style.opacity = '.6';
+              });
+              mini.addEventListener('dragleave', () => mini.style.opacity = '');
+              mini.addEventListener('drop', e => {
+                if (!state.dragItem?.isExpr) return;
+                e.preventDefault(); e.stopPropagation(); mini.style.opacity = '';
+                const ed2 = findDef(state.dragItem.type);
+                val.values[ep.name] = { code: ed2.code(state.dragItem.values), exprType: state.dragItem.type, color: state.dragItem.color, values: { ...state.dragItem.values } };
+                state.dragItem = null; state.dropTarget = null;
+                recomputeOpCode();
+                renderZones(); scheduleRun(); updateCodePanel();
+              });
               badge.appendChild(mini);
             } else {
               const inp = document.createElement('input');
@@ -976,6 +1020,20 @@ function buildBlockDiv(block, def, zone, parentId, idx) {
   });
   div.appendChild(del);
 
+  if (block.type === 'if_block') {
+    const elseBtn = document.createElement('button');
+    elseBtn.className = 'btn-else';
+    elseBtn.textContent = block.hasElse ? '− else' : '+ else';
+    elseBtn.title = block.hasElse ? 'Verwijder else-tak' : 'Voeg else-tak toe';
+    elseBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      block.hasElse = !block.hasElse;
+      if (!block.elseBranch) block.elseBranch = [];
+      renderZones(); scheduleRun(); updateCodePanel();
+    });
+    div.appendChild(elseBtn);
+  }
+
   div.addEventListener('dragstart', e => {
     state.dragItem = { ...block, color: def.color, source: 'workspace', sourceZone: zone, sourceParentId: parentId, sourceIdx: idx };
     e.dataTransfer.effectAllowed = 'move';
@@ -1038,6 +1096,37 @@ function renderBlockList(blocks, zone, parentId, container) {
       });
       container.appendChild(childArea);
 
+      if (block.hasElse) {
+        const elseHdr = document.createElement('div');
+        elseHdr.className = 'ctrl-close else-hdr';
+        elseHdr.innerHTML = '} <span class="kw-function">else</span> {';
+        container.appendChild(elseHdr);
+
+        const elseId = block.id + ':else';
+        const elseArea = document.createElement('div');
+        elseArea.className = 'ctrl-children';
+        elseArea.classList.toggle('drag-over', state.dropTarget?.zone === zone && state.dropTarget?.parentId === elseId);
+        renderBlockList(block.elseBranch || [], zone, elseId, elseArea);
+        elseArea.addEventListener('dragover', e => {
+          if (state.dragItem?.isExpr) return;
+          e.preventDefault(); e.stopPropagation();
+          state.dropTarget = { zone, parentId: elseId, idx: (block.elseBranch || []).length };
+          elseArea.classList.add('drag-over');
+        });
+        elseArea.addEventListener('dragleave', e => {
+          if (!elseArea.contains(e.relatedTarget)) {
+            elseArea.classList.remove('drag-over');
+            state.dropTarget = null;
+          }
+        });
+        elseArea.addEventListener('drop', e => {
+          e.preventDefault();
+          elseArea.classList.remove('drag-over');
+          handleDrop(zone, elseId);
+        });
+        container.appendChild(elseArea);
+      }
+
       const close = document.createElement('div');
       close.className = 'ctrl-close'; close.textContent = '}';
       container.appendChild(close);
@@ -1074,7 +1163,7 @@ function handleDrop(zone, parentId) {
 
   if (item.source === 'palette') {
     const newBlock = { id: newId(), type: item.type, values: { ...item.values } };
-    if (findDef(item.type)?.isCtrl) newBlock.children = [];
+    if (findDef(item.type)?.isCtrl) { newBlock.children = []; newBlock.hasElse = false; newBlock.elseBranch = []; }
     destList.splice(targetIdx, 0, newBlock);
   } else {
     const srcList = getBlockList(item.sourceZone, item.sourceParentId);
@@ -1104,16 +1193,84 @@ let runTimer = null;
 function scheduleRun() {
   clearTimeout(runTimer);
   runTimer = setTimeout(runSketch, 400);
+  saveWorkspace();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SAVE / LOAD
+// ═══════════════════════════════════════════════════════════════
+
+const LS_KEY = 'p5blocks_workspace';
+
+function saveWorkspace() {
+  try {
+    const name = document.getElementById('sketch-name').value;
+    localStorage.setItem(LS_KEY, JSON.stringify({ name, vars: state.vars, setup: state.setup, draw: state.draw }));
+  } catch(e) {}
+}
+
+function loadWorkspace() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (data.name) document.getElementById('sketch-name').value = data.name;
+    state.vars  = (data.vars  || []).map(deepCopyBlock);
+    state.setup = (data.setup || []).map(deepCopyBlock);
+    state.draw  = (data.draw  || []).map(deepCopyBlock);
+    return true;
+  } catch(e) { return false; }
+}
+
+function exportWorkspace() {
+  const name = document.getElementById('sketch-name').value || 'sketch';
+  const data = JSON.stringify({ name, vars: state.vars, setup: state.setup, draw: state.draw }, null, 2);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+  a.download = name + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importWorkspace(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.name) document.getElementById('sketch-name').value = data.name;
+      state.vars  = (data.vars  || []).map(deepCopyBlock);
+      state.setup = (data.setup || []).map(deepCopyBlock);
+      state.draw  = (data.draw  || []).map(deepCopyBlock);
+      renderZones(); scheduleRun(); updateCodePanel();
+    } catch(err) { alert('Ongeldig JSON-bestand.'); }
+  };
+  reader.readAsText(file);
+}
+
+function clearError() {
+  const bar = document.getElementById('error-bar');
+  bar.textContent = ''; bar.classList.add('hidden');
 }
 
 function runSketch() {
   const code = generateCode();
+  clearError();
   document.getElementById('preview-frame').srcdoc =
     `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <style>html,body{margin:0;overflow:hidden;background:#f0f0f0;}canvas{display:block;}</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/2.0.2/p5.min.js"><\/script>
+<script>window.onerror=function(msg,_,line,col){parent.postMessage({type:'p5error',msg,line,col},'*');return true;};
+window.addEventListener('unhandledrejection',e=>{parent.postMessage({type:'p5error',msg:String(e.reason?.message||e.reason)},'*');});<\/script>
 </head><body><script>${code}<\/script></body></html>`;
 }
+
+window.addEventListener('message', e => {
+  if (e.data?.type !== 'p5error') return;
+  const bar = document.getElementById('error-bar');
+  const loc = e.data.line ? ` (regel ${e.data.line}${e.data.col ? ':' + e.data.col : ''})` : '';
+  bar.textContent = '⚠ ' + e.data.msg + loc;
+  bar.classList.remove('hidden');
+});
 
 function loadPreset(name) {
   _uid = 0;
@@ -1155,6 +1312,19 @@ document.getElementById('preset-select').addEventListener('change', function () 
   if (this.value) { loadPreset(this.value); this.value = ''; }
 });
 
+document.getElementById('btn-export').addEventListener('click', exportWorkspace);
+
+document.getElementById('btn-import').addEventListener('click', () => {
+  document.getElementById('file-import').value = '';
+  document.getElementById('file-import').click();
+});
+
+document.getElementById('file-import').addEventListener('change', function() {
+  if (this.files[0]) importWorkspace(this.files[0]);
+});
+
+document.getElementById('sketch-name').addEventListener('input', saveWorkspace);
+
 document.getElementById('btn-lang').addEventListener('click', () => {
   state.lang = state.lang === 'nl' ? 'en' : 'nl';
   applyLang();
@@ -1179,7 +1349,8 @@ function applyLang() {
 // ── Init ───────────────────────────────────────────────────────
 renderCategories();
 renderPalette();
-loadPreset('muis_volger');
+if (!loadWorkspace()) loadPreset('muis_volger');
+else { renderZones(); scheduleRun(); }
 </script>
 </body>
 </html>
