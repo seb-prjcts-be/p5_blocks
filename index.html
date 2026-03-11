@@ -13,7 +13,9 @@
 
   <!-- ── Toolbar ────────────────────────────────────────────────── -->
   <div id="toolbar">
-    <a class="logo" href="#" title="p5.js Blocks">p5<span>*</span></a>
+    <a class="logo" href="#" title="p5.js Blocks">
+      <span class="logo-p5">p5</span><span class="logo-star">*</span>
+    </a>
     <div class="t-divider"></div>
     <input id="sketch-name" type="text" value="mijn_sketch" spellcheck="false" />
     <div class="t-divider"></div>
@@ -25,15 +27,12 @@
     <span style="font-size:11px;color:#bbb;margin-left:6px;font-family:var(--mono)">p5 v2.0.2</span>
     <input type="file" id="file-import" accept=".json" style="display:none" />
     <div class="t-spacer"></div>
+    <span id="profile-badge"></span>
+    <button class="btn-secondary" id="btn-library" title="Blokbibliotheek"><i class="bi bi-grid-3x3-gap"></i></button>
     <button class="btn-secondary" id="btn-code"><i class="bi bi-code-slash"></i> Code</button>
     <button class="btn-secondary" id="btn-lang">EN</button>
     <div class="t-divider"></div>
-    <select class="preset-select" id="preset-select">
-      <option value="">Voorbeelden…</option>
-      <option value="leeg">Leeg</option>
-      <option value="regenboog">Regenboog</option>
-      <option value="muis_volger">Muis volger</option>
-    </select>
+    <select class="preset-select" id="preset-select"></select>
   </div>
 
   <!-- ── Body ──────────────────────────────────────────────────── -->
@@ -75,6 +74,14 @@
           <div class="zone-body" data-zone="draw"></div>
           <div class="zone-footer">}</div>
         </div>
+
+        <div class="zone-wrap zone-klad">
+          <div class="zone-header">
+            <span class="kw-function" id="zone-klad-label">kladblok</span>
+            <span class="kw-punc" id="zone-klad-sub">(geen code)</span>
+          </div>
+          <div class="zone-body" data-zone="kladblok"></div>
+        </div>
       </div>
 
       <!-- Code panel (collapsible) -->
@@ -96,6 +103,9 @@
 
   </div>
 </div>
+
+<div id="lib-backdrop"></div>
+<div id="lib-overlay"></div>
 
 <script src="app.js" defer></script>
 </body>
