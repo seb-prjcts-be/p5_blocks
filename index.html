@@ -269,7 +269,28 @@
       background: color-mix(in srgb, var(--pal-color, #999) 14%, #fff);
       border-color: var(--pal-color, #999);
     }
-    .pal-block.op { justify-content: center; }
+    .pal-block.expr-const { width: fit-content; }
+    .pal-block.bool-op { width: fit-content; }
+    .pal-block.op { justify-content: flex-start; width: fit-content; }
+    .op-slot {
+      display: inline-block; width: 22px; height: 14px;
+      background: #fff; border-radius: 8px;
+      border: 1px solid rgba(0,0,0,.15); vertical-align: middle;
+    }
+    .op-slot.bool-slot {
+      clip-path: polygon(6px 0%,calc(100% - 6px) 0%,100% 50%,calc(100% - 6px) 100%,6px 100%,0% 50%);
+      border-radius: 0; border: none; background: rgba(255,255,255,.7);
+    }
+    /* Boolean hex badges */
+    .expr-badge.bool-badge {
+      clip-path: polygon(10px 0%,calc(100% - 10px) 0%,100% 50%,calc(100% - 10px) 100%,10px 100%,0% 50%);
+      border-radius: 0; border: none; padding: 2px 16px 2px 16px;
+      filter: drop-shadow(1px 0 0 var(--block-color, #06B6D4))
+              drop-shadow(-1px 0 0 var(--block-color, #06B6D4))
+              drop-shadow(0 1px 0 var(--block-color, #06B6D4))
+              drop-shadow(0 -1px 0 var(--block-color, #06B6D4));
+    }
+    .pal-block.bool-op { border-radius: 20px; }
 
     .block-del {
       margin-left: auto; background: rgba(0,0,0,.07); border: none;
@@ -339,6 +360,7 @@
     <div class="t-divider"></div>
     <button class="btn-run" id="btn-run"><i class="bi bi-play-fill"></i> Run</button>
     <button class="btn-secondary" id="btn-stop"><i class="bi bi-stop-fill"></i> Stop</button>
+    <span style="font-size:11px;color:#bbb;margin-left:6px;font-family:var(--mono)">p5 v2.0.2</span>
     <div class="t-spacer"></div>
     <button class="btn-secondary" id="btn-code"><i class="bi bi-code-slash"></i> Code</button>
     <button class="btn-secondary" id="btn-lang">EN</button>
@@ -418,8 +440,8 @@
 // ═══════════════════════════════════════════════════════════════
 
 const CAT_LABELS = {
-  nl: { setup:'Setup', shapes:'Vormen', kleur:'Kleur', transform:'Transform', interactie:'Typografie', wiskunde:'Wiskunde', operatoren:'Operatoren', controle:'Controle', variabelen:'Variabelen' },
-  en: { setup:'Setup', shapes:'Shape',  kleur:'Color', transform:'Transform', interactie:'Typography', wiskunde:'Math',     operatoren:'Operators',  controle:'Structure',  variabelen:'Variables'  },
+  nl: { setup:'Setup', shapes:'Vormen', kleur:'Kleur', transform:'Transform', interactie:'Typografie', wiskunde:'Wiskunde', controle:'Controle', variabelen:'Variabelen' },
+  en: { setup:'Setup', shapes:'Shape',  kleur:'Color', transform:'Transform', interactie:'Typography', wiskunde:'Math',     controle:'Structure',  variabelen:'Variables'  },
 };
 
 const UI = {
@@ -431,6 +453,9 @@ const UI = {
     codeTitle:'Gegenereerde code', codeCopy:'Kopieer naar klembord',
     blockDelete:'Verwijder',
     palVarDeclare:'let naam = waarde', palVarSet:'naam = waarde',
+    opAdd:'optellen', opSub:'aftrekken', opMul:'vermenigvuldigen', opDiv:'delen', opMod:'restgetal',
+    opGt:'groter dan', opLt:'kleiner dan', opGte:'groter of gelijk', opLte:'kleiner of gelijk',
+    opEq:'gelijk aan', opNeq:'niet gelijk', opAnd:'EN', opOr:'OF', opNot:'NIET',
   },
   en: {
     zoneVars:'variables', zoneVarsSub:'(global)',
@@ -440,6 +465,9 @@ const UI = {
     codeTitle:'Generated code', codeCopy:'Copy to clipboard',
     blockDelete:'Delete',
     palVarDeclare:'let name = value', palVarSet:'name = value',
+    opAdd:'addition', opSub:'subtraction', opMul:'multiplication', opDiv:'division', opMod:'remainder',
+    opGt:'greater than', opLt:'less than', opGte:'greater or equal', opLte:'less or equal',
+    opEq:'equal to', opNeq:'not equal', opAnd:'AND', opOr:'OR', opNot:'NOT',
   },
 };
 
@@ -472,7 +500,7 @@ const CATEGORIES = {
     ]
   },
   kleur: {
-    label: 'Kleur', color: '#E23D96',
+    label: 'Kleur', color: '#8B5CF6',
     blocks: [
       { type: 'fill',         label: 'fill',         params: [{name:'r',def:'255'},{name:'g',def:'100'},{name:'b',def:'50'}],  code: p=>`fill(${p.r}, ${p.g}, ${p.b});` },
       { type: 'stroke',       label: 'stroke',       params: [{name:'r',def:'0'},{name:'g',def:'0'},{name:'b',def:'0'}],       code: p=>`stroke(${p.r}, ${p.g}, ${p.b});` },
@@ -508,11 +536,6 @@ const CATEGORIES = {
       { type: 'cos',    label: 'cos',    params: [{name:'a',def:'frameCount*0.05'}], isExpr: true, code: p=>`cos(${p.a})` },
       { type: 'tan',    label: 'tan',    params: [{name:'a',def:'frameCount*0.05'}], isExpr: true, code: p=>`tan(${p.a})` },
       { type: 'noise',  label: 'noise',  params: [{name:'x',def:'frameCount*0.01'}], isExpr: true, code: p=>`noise(${p.x})` },
-    ]
-  },
-  operatoren: {
-    label: 'Operatoren', color: '#C0CE68',
-    blocks: [
       { type: 'op_add', label: '+', isExpr: true, isOp: true, params: [{name:'a',def:'0'},{name:'b',def:'0'}], code: p=>`(${p.a} + ${p.b})` },
       { type: 'op_sub', label: '-', isExpr: true, isOp: true, params: [{name:'a',def:'0'},{name:'b',def:'0'}], code: p=>`(${p.a} - ${p.b})` },
       { type: 'op_mul', label: '×', isExpr: true, isOp: true, params: [{name:'a',def:'0'},{name:'b',def:'0'}], code: p=>`(${p.a} * ${p.b})` },
@@ -525,11 +548,22 @@ const CATEGORIES = {
     blocks: [
       { type: 'for_loop', label: 'for',  isCtrl: true, params: [{name:'v',def:'i'},{name:'start',def:'0'},{name:'end',def:'10'},{name:'step',def:'1'}], code: p=>`for (let ${p.v} = ${p.start}; ${p.v} < ${p.end}; ${p.v} += ${p.step}) {` },
       { type: 'if_block', label: 'if',   isCtrl: true, params: [{name:'cond',def:'mouseIsPressed'}],                                                   code: p=>`if (${p.cond}) {` },
+      { type: 'op_gt',  label: '>',  isExpr: true, isOp: true, isBool: true, params: [{name:'a',def:'0'},{name:'b',def:'0'}], code: p=>`(${p.a} > ${p.b})` },
+      { type: 'op_lt',  label: '<',  isExpr: true, isOp: true, isBool: true, params: [{name:'a',def:'0'},{name:'b',def:'0'}], code: p=>`(${p.a} < ${p.b})` },
+      { type: 'op_gte', label: '≥',  isExpr: true, isOp: true, isBool: true, params: [{name:'a',def:'0'},{name:'b',def:'0'}], code: p=>`(${p.a} >= ${p.b})` },
+      { type: 'op_lte', label: '≤',  isExpr: true, isOp: true, isBool: true, params: [{name:'a',def:'0'},{name:'b',def:'0'}], code: p=>`(${p.a} <= ${p.b})` },
+      { type: 'op_eq',  label: '==', isExpr: true, isOp: true, isBool: true, params: [{name:'a',def:'0'},{name:'b',def:'0'}], code: p=>`(${p.a} === ${p.b})` },
+      { type: 'op_neq', label: '≠',  isExpr: true, isOp: true, isBool: true, params: [{name:'a',def:'0'},{name:'b',def:'0'}], code: p=>`(${p.a} !== ${p.b})` },
+      { type: 'op_and', label: '&&', isExpr: true, isOp: true, isBool: true, params: [{name:'a',def:'true'},{name:'b',def:'true'}], code: p=>`(${p.a} && ${p.b})` },
+      { type: 'op_or',  label: '||', isExpr: true, isOp: true, isBool: true, params: [{name:'a',def:'true'},{name:'b',def:'true'}], code: p=>`(${p.a} || ${p.b})` },
+      { type: 'op_not', label: '!',  isExpr: true, isOp: true, isBool: true, isUnary: true, params: [{name:'a',def:'true'}], code: p=>`(!${p.a})` },
     ]
   },
   variabelen: {
-    label: 'Variabelen', color: '#8B5CF6',
+    label: 'Variabelen', color: '#E23D96',
     blocks: [
+      { type: 'var_declare', label: 'let', palLabel: 'let naam = waarde', isVar: true, params: [{name:'naam',def:'x'},{name:'waarde',def:'0'}], code: p=>`let ${p.naam} = ${p.waarde};` },
+      { type: 'var_set',     label: '',    palLabel: 'naam = waarde',    isVar: true, params: [{name:'naam',def:'x'},{name:'waarde',def:'0'}], code: p=>`${p.naam} = ${p.waarde};` },
       { type: 'mouseX',     label: 'mouseX',     params: [], isExpr: true, code: ()=>'mouseX' },
       { type: 'mouseY',     label: 'mouseY',     params: [], isExpr: true, code: ()=>'mouseY' },
       { type: 'width',      label: 'width',      params: [], isExpr: true, code: ()=>'width' },
@@ -539,8 +573,6 @@ const CATEGORIES = {
       { type: 'TAU',        label: 'TAU',        params: [], isExpr: true, code: ()=>'TAU' },
       { type: 'TWO_PI',     label: 'TWO_PI',     params: [], isExpr: true, code: ()=>'TWO_PI' },
       { type: 'HALF_PI',    label: 'HALF_PI',    params: [], isExpr: true, code: ()=>'HALF_PI' },
-      { type: 'var_declare', label: 'let', palLabel: 'let naam = waarde', isVar: true, params: [{name:'naam',def:'x'},{name:'waarde',def:'0'}], code: p=>`let ${p.naam} = ${p.waarde};` },
-      { type: 'var_set',     label: '',    palLabel: 'naam = waarde',    isVar: true, params: [{name:'naam',def:'x'},{name:'waarde',def:'0'}], code: p=>`${p.naam} = ${p.waarde};` },
     ]
   },
 };
@@ -638,9 +670,9 @@ const PRESETS = {
     draw: [
       makeBlock('background', {c:'245, 245, 245'}),
       makeBlock('fill', {r:'100',g:'200',b:'255'}),
-      makeBlock('circle', {x:{code:'mouseX',exprType:'mouseX',color:'#8B5CF6'},y:{code:'mouseY',exprType:'mouseY',color:'#8B5CF6'},d:'60'}),
+      makeBlock('circle', {x:{code:'mouseX',exprType:'mouseX',color:'#E23D96'},y:{code:'mouseY',exprType:'mouseY',color:'#E23D96'},d:'60'}),
       makeBlock('fill', {r:'255',g:'100',b:'150'}),
-      makeBlock('circle', {x:{code:'(mouseX + 30)',exprType:'op_add',color:'#C0CE68',values:{a:{code:'mouseX',exprType:'mouseX',color:'#8B5CF6'},b:'30'}}, y:{code:'(mouseY - 30)',exprType:'op_sub',color:'#C0CE68',values:{a:{code:'mouseY',exprType:'mouseY',color:'#8B5CF6'},b:'30'}}, d:'30'}),
+      makeBlock('circle', {x:{code:'(mouseX + 30)',exprType:'op_add',color:'#C0CE68',values:{a:{code:'mouseX',exprType:'mouseX',color:'#E23D96'},b:'30'}}, y:{code:'(mouseY - 30)',exprType:'op_sub',color:'#C0CE68',values:{a:{code:'mouseY',exprType:'mouseY',color:'#E23D96'},b:'30'}}, d:'30'}),
     ],
   },
 };
@@ -707,15 +739,21 @@ function renderPalette() {
 
   cat.blocks.forEach(block => {
     const div = document.createElement('div');
+    const blockColor = block.color ?? cat.color;
     div.className = 'pal-block';
-    div.style.borderLeftColor = cat.color;
-    div.style.setProperty('--pal-color', cat.color);
+    div.style.borderLeftColor = blockColor;
+    div.style.setProperty('--pal-color', blockColor);
     div.draggable = true;
 
     let inner;
     if (block.isOp) {
-      inner = `<span style="color:#999;font-size:11px">□</span><span style="font-weight:600;padding:0 4px">${block.label}</span><span style="color:#999;font-size:11px">□</span>`;
+      const slotCls = block.isBool ? 'op-slot bool-slot' : 'op-slot';
+      const slots = block.isUnary
+        ? `<span style="font-weight:700;padding:0 3px 0 5px">${block.label}</span><span class="${slotCls}"></span>`
+        : `<span class="${slotCls}"></span><span style="font-weight:700;padding:0 5px">${block.label}</span><span class="${slotCls}"></span>`;
+      inner = slots;
       div.classList.add('op');
+      if (block.isBool) div.classList.add('bool-op');
     } else if (block.palLabel) {
       const lbl = block.type === 'var_declare' ? t('palVarDeclare') : block.type === 'var_set' ? t('palVarSet') : block.palLabel;
       inner = `<span>${lbl}</span>`;
@@ -802,9 +840,9 @@ function buildBlockDiv(block, def, zone, parentId, idx) {
       const val = block.values[p.name] ?? p.def;
       if (val && typeof val === 'object' && val.exprType) {
         const badge = document.createElement('span');
-        badge.className = 'expr-badge';
-        badge.style.setProperty('--block-color', val.color || '#999');
         const eDef = findDef(val.exprType);
+        badge.className = 'expr-badge' + (eDef?.isBool ? ' bool-badge' : '');
+        badge.style.setProperty('--block-color', val.color || '#999');
         const recomputeOpCode = () => {
           const resolved = {};
           eDef.params.forEach(ep => {
@@ -814,7 +852,8 @@ function buildBlockDiv(block, def, zone, parentId, idx) {
           val.code = eDef.code(resolved);
         };
         if (eDef?.isOp && val.values) {
-          badge.appendChild(punc('('));
+          if (eDef.isUnary) badge.appendChild(punc(eDef.label));
+          else badge.appendChild(punc('('));
           eDef.params.forEach((ep, epi) => {
             if (epi > 0) badge.appendChild(punc(` ${eDef.label} `));
             const pVal = val.values[ep.name];
@@ -866,7 +905,7 @@ function buildBlockDiv(block, def, zone, parentId, idx) {
               badge.appendChild(inp);
             }
           });
-          badge.appendChild(punc(')'));
+          if (!eDef.isUnary) badge.appendChild(punc(')'));
         } else {
           badge.appendChild(document.createTextNode(val.code));
         }
