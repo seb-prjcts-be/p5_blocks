@@ -4,19 +4,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>p5* Blocks</title>
-  <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;700&family=Source+Code+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <div id="app">
 
+  <!-- ── Header ─────────────────────────────────────────────────── -->
+  <header>
+    <div class="header-main">
+      <a class="site-title-link" href="#">
+        <h1>p5* Blocks</h1>
+        <div class="subtitle">Visueel programmeren met p5.js</div>
+      </a>
+    </div>
+  </header>
+
   <!-- ── Toolbar ────────────────────────────────────────────────── -->
   <div id="toolbar">
-    <a class="logo" href="#" title="p5.js Blocks">
-      <span class="logo-p5">p5</span><span class="logo-star">*</span>
-    </a>
-    <div class="t-divider"></div>
     <input id="sketch-name" type="text" value="mijn_sketch" spellcheck="false" />
     <div class="t-divider"></div>
     <button class="btn-run" id="btn-run"><i class="bi bi-play-fill"></i> Run</button>
