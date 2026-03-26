@@ -12,3 +12,4 @@ Thumbs.db
 
 # AI agent context (lokaal)
 AGENTS.md
+.claude/
