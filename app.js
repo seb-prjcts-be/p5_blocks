@@ -800,7 +800,7 @@ function runSketch() {
   document.getElementById('preview-frame').srcdoc =
     `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <style>html,body{margin:0;overflow:hidden;background:#f0f0f0;}canvas{display:block;}</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/2.0.2/p5.min.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/p5@2.3.3/lib/p5.min.js"><\/script>
 <script>window.onerror=function(msg,_,line,col){parent.postMessage({type:'p5error',msg,line,col},'*');return true;};
 window.addEventListener('unhandledrejection',e=>{parent.postMessage({type:'p5error',msg:String(e.reason?.message||e.reason)},'*');});<\/script>
 </head><body><script>${code}<\/script></body></html>`;
